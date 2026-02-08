@@ -27,7 +27,8 @@ def demo_fishing_forecast():
     
     # Initialize fish forecast system
     print("Initializing fish bite forecast system...")
-    fish_system = FishBiteForecastSystem()
+    # Using Pike (Щука) as default species
+    fish_system = FishBiteForecastSystem(species=FishSpecies.PIKE)
     
     # Example conditions for fishing
     conditions = {
@@ -75,16 +76,13 @@ def demo_fishing_forecast():
         print(f"Error: {result['error']}")
     else:
         print(f"KIAR (Fish Activity): {result['KIAR_percent']:.1f}%")
-        print(f"Rating:               {result['rating']}")
+        print(f"Interpretation:       {result['interpretation']}")
         print(f"Recommendation:       {result['recommendation']}")
         print()
         
         print("Individual Coefficients:")
-        for key, value in result.items():
-            if key.startswith('K_') and not key.endswith('_desc'):
-                desc_key = key + '_desc'
-                desc = result.get(desc_key, '')
-                print(f"  {key}: {value:.3f} - {desc}")
+        for key, value in result['coefficients'].items():
+            print(f"  {key}: {value:.3f}")
     
     print()
     
@@ -100,27 +98,30 @@ def demo_fishing_forecast():
     ]
     
     for species in species_to_test:
-        profile = FishProfile.get_profile(species)
+        profile_obj = FishProfile(species)
         
         # Calculate temperature coefficient for this species
         calc = FishActivityCalculations()
-        K_temp = calc.temperature_coefficient(
+        K_temp = calc.K_temperature(
             conditions['water_temp_celsius'],
-            profile['temp_optimal'],
-            profile['temp_range']
+            profile_obj
         )
         
         # Estimate activity (simplified)
         activity = K_temp * result['KIAR_percent']
         
-        print(f"{species.value:15s}: {activity:.1f}% activity (optimal temp: {profile['temp_optimal']}°C)")
+        print(f"{species.value:15s}: {activity:.1f}% activity (optimal temp: {profile_obj.T_opt}°C)")
     
     print()
     
-    # Generate report
-    print("Generating detailed report...")
-    fish_system.generate_report(result, conditions, output_file="/tmp/fishing_forecast.txt")
-    print("Report saved to /tmp/fishing_forecast.txt")
+    # Print detailed report
+    print("Detailed Forecast Report:")
+    print("-" * 70)
+    fish_system.print_forecast_report(result)
+    
+    # Save to file
+    fish_system.save_forecast_to_json(result, "/tmp/fishing_forecast.json")
+    print("Forecast saved to /tmp/fishing_forecast.json")
     
     print()
     print("=" * 70)

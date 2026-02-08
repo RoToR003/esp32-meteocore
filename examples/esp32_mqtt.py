@@ -141,8 +141,9 @@ def main():
         log("ERROR: Cannot continue without MQTT")
         return
     
-    # Initialize fish forecast system
-    fish_system = FishBiteForecastSystem()
+    # Initialize fish forecast system (using Pike as default)
+    from src.fishing.profiles import FishSpecies
+    fish_system = FishBiteForecastSystem(species=FishSpecies.PIKE)
     
     log("System initialized, starting main loop")
     log("Press Ctrl+C to stop")
