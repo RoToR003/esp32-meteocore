@@ -15,6 +15,11 @@ This station is calibrated specifically for:
 - Purpose: Personal fishing forecast station
 """
 
+import sys
+import os
+# Add parent directory to path for imports
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import time
 from datetime import datetime
 
