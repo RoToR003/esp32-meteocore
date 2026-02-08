@@ -100,7 +100,7 @@ class AHT20:
         Initialize DHT22 sensor (fallback for Wokwi).
         
         Args:
-            pin: GPIO Pin object
+            pin: GPIO Pin object (DHT22 library handles pin configuration)
         """
         import dht
         self.sensor = dht.DHT22(pin)

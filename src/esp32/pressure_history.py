@@ -223,7 +223,8 @@ class PressureHistory:
             # Parse data
             count = data[0] | (data[1] << 8)
             
-            if count > self.max_size or count < 0:
+            # Validate count (reasonable upper bound check)
+            if count > self.max_size:
                 log(f"Invalid count in NVS: {count} (max: {self.max_size})", "WARNING")
                 return False
             
