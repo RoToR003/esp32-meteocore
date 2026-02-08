@@ -102,7 +102,7 @@ class PressureHistory:
         old_pressure = closest_entry[0]
         trend = latest_pressure - old_pressure
         
-        log(f"Trend ({hours}h): {trend:+.2f} hPa/3h")
+        log(f"Trend ({hours}h): {trend:+.2f} hPa/{hours}h")
         return round(trend, 2)
     
     def get_data(self):
@@ -223,8 +223,8 @@ class PressureHistory:
             # Parse data
             count = data[0] | (data[1] << 8)
             
-            if count > 24 or count < 0:
-                log(f"Invalid count in NVS: {count}", "WARNING")
+            if count > self.max_size or count < 0:
+                log(f"Invalid count in NVS: {count} (max: {self.max_size})", "WARNING")
                 return False
             
             # Read entries

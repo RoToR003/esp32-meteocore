@@ -350,7 +350,7 @@ def get_color_for_temperature(temp):
         int: RGB565 color value
     """
     if temp < 0:
-        return 0x1CF   # Blue (cold)
+        return 0x001F   # Blue (cold) - pure blue RGB565
     elif temp < 15:
         return 0x07FF  # Cyan (cool)
     elif temp < 25:

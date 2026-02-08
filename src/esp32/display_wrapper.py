@@ -21,6 +21,46 @@ def log(message, level="INFO"):
         pass
 
 
+def draw_circle_bresenham(display, x0, y0, radius, color, fill=False):
+    """
+    Draw circle using Bresenham's algorithm.
+    
+    Helper function used by both ST7789 and ILI9341 displays.
+    
+    Args:
+        display: Display object with line() and pixel() methods
+        x0, y0: Center coordinates
+        radius: Circle radius
+        color: Color value
+        fill: Whether to fill the circle
+    """
+    x = radius
+    y = 0
+    err = 0
+    
+    while x >= y:
+        if fill:
+            display.line(x0 - x, y0 + y, x0 + x, y0 + y, color)
+            display.line(x0 - x, y0 - y, x0 + x, y0 - y, color)
+            display.line(x0 - y, y0 + x, x0 + y, y0 + x, color)
+            display.line(x0 - y, y0 - x, x0 + y, y0 - x, color)
+        else:
+            display.pixel(x0 + x, y0 + y, color)
+            display.pixel(x0 + y, y0 + x, color)
+            display.pixel(x0 - y, y0 + x, color)
+            display.pixel(x0 - x, y0 + y, color)
+            display.pixel(x0 - x, y0 - y, color)
+            display.pixel(x0 - y, y0 - x, color)
+            display.pixel(x0 + y, y0 - x, color)
+            display.pixel(x0 + x, y0 - y, color)
+        
+        y += 1
+        err += 1 + 2*y
+        if 2*(err-x) + 1 > 0:
+            x -= 1
+            err += 1 - 2*x
+
+
 class DisplayInterface:
     """
     Base interface for all display implementations.
@@ -120,40 +160,11 @@ class ST7789Display(DisplayInterface):
         self.display.fill_rect(x, y, w, h, color)
     
     def circle(self, x, y, r, color, fill=False):
-        # ST7789 might not have circle method, implement manually
+        # ST7789 might not have circle method, use helper
         if hasattr(self.display, 'circle'):
             self.display.circle(x, y, r, color, fill)
         else:
-            # Basic circle drawing using Bresenham
-            self._draw_circle_bresenham(x, y, r, color, fill)
-    
-    def _draw_circle_bresenham(self, x0, y0, radius, color, fill=False):
-        """Draw circle using Bresenham's algorithm."""
-        x = radius
-        y = 0
-        err = 0
-        
-        while x >= y:
-            if fill:
-                self.display.line(x0 - x, y0 + y, x0 + x, y0 + y, color)
-                self.display.line(x0 - x, y0 - y, x0 + x, y0 - y, color)
-                self.display.line(x0 - y, y0 + x, x0 + y, y0 + x, color)
-                self.display.line(x0 - y, y0 - x, x0 + y, y0 - x, color)
-            else:
-                self.display.pixel(x0 + x, y0 + y, color)
-                self.display.pixel(x0 + y, y0 + x, color)
-                self.display.pixel(x0 - y, y0 + x, color)
-                self.display.pixel(x0 - x, y0 + y, color)
-                self.display.pixel(x0 - x, y0 - y, color)
-                self.display.pixel(x0 - y, y0 - x, color)
-                self.display.pixel(x0 + y, y0 - x, color)
-                self.display.pixel(x0 + x, y0 - y, color)
-            
-            y += 1
-            err += 1 + 2*y
-            if 2*(err-x) + 1 > 0:
-                x -= 1
-                err += 1 - 2*x
+            draw_circle_bresenham(self.display, x, y, r, color, fill)
     
     def text(self, text, x, y, color):
         self.display.text(text, x, y, color)
@@ -243,35 +254,7 @@ class ILI9341Display(DisplayInterface):
         if hasattr(self.display, 'circle'):
             self.display.circle(x, y, r, color, fill)
         else:
-            self._draw_circle_bresenham(x, y, r, color, fill)
-    
-    def _draw_circle_bresenham(self, x0, y0, radius, color, fill=False):
-        """Draw circle using Bresenham's algorithm."""
-        x = radius
-        y = 0
-        err = 0
-        
-        while x >= y:
-            if fill:
-                self.display.line(x0 - x, y0 + y, x0 + x, y0 + y, color)
-                self.display.line(x0 - x, y0 - y, x0 + x, y0 - y, color)
-                self.display.line(x0 - y, y0 + x, x0 + y, y0 + x, color)
-                self.display.line(x0 - y, y0 - x, x0 + y, y0 - x, color)
-            else:
-                self.display.pixel(x0 + x, y0 + y, color)
-                self.display.pixel(x0 + y, y0 + x, color)
-                self.display.pixel(x0 - y, y0 + x, color)
-                self.display.pixel(x0 - x, y0 + y, color)
-                self.display.pixel(x0 - x, y0 - y, color)
-                self.display.pixel(x0 - y, y0 - x, color)
-                self.display.pixel(x0 + y, y0 - x, color)
-                self.display.pixel(x0 + x, y0 - y, color)
-            
-            y += 1
-            err += 1 + 2*y
-            if 2*(err-x) + 1 > 0:
-                x -= 1
-                err += 1 - 2*x
+            draw_circle_bresenham(self.display, x, y, r, color, fill)
     
     def text(self, text, x, y, color):
         self.display.text(text, x, y, color)

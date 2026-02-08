@@ -251,7 +251,9 @@ class MeteoDisplayEnhanced:
             self.display.text(f"Water Temp: {ext_temp:.1f}C", 20, y, COLOR_CYAN)
             y += line_height
         
-        # Dew point (calculate)
+        # Dew point (calculate using simplified approximation)
+        # Note: This is a basic approximation accurate to ±1°C
+        # For better accuracy, use Magnus formula: Td = (b*α)/(a-α) where α = ln(RH/100) + aT/(b+T)
         humidity = data.get('humidity', 50)
         dew_point = temp - ((100 - humidity) / 5.0)  # Simple approximation
         self.display.text(f"Dew Point: {dew_point:.1f}C", 20, y, COLOR_CYAN)
