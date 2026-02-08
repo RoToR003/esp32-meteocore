@@ -177,6 +177,57 @@ SCL = GPIO 5
 DATA = GPIO 15
 ```
 
+### 🌡️ DS18B20 Water Temperature Sensor
+
+**⚠️ IMPORTANT: DS18B20 requires 4.7kΩ pull-up resistor!**
+
+#### Wiring Diagram
+
+```
+         4.7kΩ Resistor
+         ┌────────┐
+3.3V ────┤        ├──── GPIO 15 (DATA)
+         └────────┘
+              │
+         DS18B20 (Yellow wire)
+```
+
+#### Pinout (Waterproof DS18B20)
+
+```
+┌─────────────────────┐
+│ RED    → 3.3V (VCC) │
+│ YELLOW → GPIO 15    │ ← Connect 4.7kΩ resistor to 3.3V!
+│ BLACK  → GND        │
+└─────────────────────┘
+```
+
+**Why pull-up resistor is needed:**
+- DS18B20 uses 1-Wire protocol (open-drain)
+- Without pull-up, data line will "float" and sensor won't communicate
+- Resistor value: 4.7kΩ (don't use 10kΩ - too high!)
+
+#### Testing DS18B20
+
+```python
+from machine import Pin
+import onewire, ds18x20, time
+
+# Initialize
+ow = onewire.OneWire(Pin(15))
+ds = ds18x20.DS18X20(ow)
+
+# Scan for devices
+roms = ds.scan()
+print(f"Found {len(roms)} sensor(s)")
+
+# Read temperature
+ds.convert_temp()
+time.sleep_ms(750)
+temp = ds.read_temp(roms[0])
+print(f"Water: {temp}°C")
+```
+
 **IR Receiver:** HX1838 (VS1838B compatible)
 ```python
 IR_PIN = GPIO 1  # RTC GPIO for wake_on_ext0
@@ -186,6 +237,17 @@ IR_PIN = GPIO 1  # RTC GPIO for wake_on_ext0
 ```python
 BAT_ADC = GPIO 2  # Voltage divider 100kΩ/100kΩ
 ```
+
+### 📊 Complete Pinout Summary
+
+| Component | Interface | GPIO Pins | Notes |
+|-----------|-----------|-----------|-------|
+| **AHT20** | I2C (0x38) | SDA=4, SCL=5 | Temperature + Humidity |
+| **BMP280** | I2C (0x76) | SDA=4, SCL=5 | Pressure + Temperature |
+| **DS18B20** | 1-Wire | DATA=15 | **Needs 4.7kΩ pull-up!** |
+| **ST7789** | SPI | SCK=14, MOSI=13, RST=12, DC=11, BLK=10 | 240×320 display |
+| **HX1838** | Digital | OUT=1 | IR receiver (wake-up) |
+| **Battery** | ADC | GPIO 2 | Voltage divider 2:1 |
 
 **Power Supply:**
 - 2×18650 cells in parallel (~5400 mAh)
@@ -285,6 +347,20 @@ BAT_ADC = GPIO 2  # Voltage divider 100kΩ/100kΩ
    # Or run manually:
    mpremote run main.py
    ```
+
+## 🔧 Wokwi Simulation
+
+Open the project in Wokwi for browser-based simulation:
+
+1. Upload all files to Wokwi
+2. `diagram.json` contains correct sensor configuration:
+   - **BMP280** - Pressure sensor (I2C 0x76)
+   - **DHT22** - Simulating AHT20 (both return temperature+humidity)
+   - **DS18B20** - Water temperature (1-Wire GPIO 15)
+   - **IR Receiver** - Wake-up trigger (GPIO 1)
+3. Run simulation (sensors will use simulated values)
+
+**Note:** Wokwi doesn't have native AHT20 component, so we use DHT22 as simulation (both return temperature+humidity via similar I2C protocol).
 
 ### Usage Example
 
