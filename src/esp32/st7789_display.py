@@ -164,19 +164,31 @@ class MeteoDisplay:
                 self.st7789.YELLOW
             )
             
+            # External Temperature (DS18B20)
+            y_offset = 90
+            if data.get('temperature_external') is not None:
+                ext_temp = data['temperature_external']
+                self.display.text(
+                    f"Out: {ext_temp:.1f}C",
+                    10, y_offset,
+                    self.st7789.YELLOW
+                )
+                y_offset += 30
+            
             # Humidity
             humidity = data.get('humidity', 0)
             self.display.text(
                 f"H: {humidity:.0f}%",
-                10, 90,
+                10, y_offset,
                 self.st7789.CYAN
             )
+            y_offset += 30
             
             # Pressure
             pressure = data.get('pressure', 0)
             self.display.text(
                 f"P: {pressure:.1f}hPa",
-                10, 120,
+                10, y_offset,
                 self.st7789.GREEN
             )
             
@@ -185,9 +197,10 @@ class MeteoDisplay:
             # Truncate if too long
             if len(forecast) > 20:
                 forecast = forecast[:20]
+            y_offset += 50
             self.display.text(
                 forecast,
-                10, 170,
+                10, y_offset,
                 self.st7789.WHITE
             )
             

@@ -29,6 +29,7 @@ A modular, scientifically accurate system for weather forecasting and fish bite 
 ### ESP32 Hardware Support
 - **BME280/BMP180/BMP280** sensor drivers (temperature, humidity, pressure)
 - **AHT20** sensor driver (temperature, humidity) for ESP32-S3
+- **DS18B20** sensor driver (external temperature, 1-Wire) for ESP32-S3
 - **BH1750** light sensor support
 - **ST7789** TFT display driver (1.28"/1.69" with PWM backlight)
 - **WiFi** connection management with auto-reconnect and burst mode
@@ -66,6 +67,7 @@ esp32-meteocore/
 │   │   ├── sensors.py          # BME280, BH1750 drivers
 │   │   ├── aht20.py            # ⭐ AHT20 temperature/humidity driver
 │   │   ├── bmp280.py           # ⭐ BMP280 pressure sensor driver
+│   │   ├── ds18b20.py          # ⭐ DS18B20 external temperature driver (1-Wire)
 │   │   ├── st7789_display.py   # ⭐ ST7789 TFT display driver
 │   │   ├── power_manager.py    # ⭐ Deep Sleep and battery management
 │   │   ├── memory_optimizer.py # ⭐ RAM optimization utilities
@@ -140,12 +142,12 @@ Transform your ESP32-S3 into an **autonomous meteo station** with ultra-low powe
 
 ### Features
 - ✅ **Deep Sleep Mode**: Wakes once per hour for updates (~30 µA consumption)
-- ✅ **IR Remote Wake**: View data instantly without WiFi
+- ✅ **IR Remote Wake**: View data instantly without WiFi (HX1838/VS1838B)
 - ✅ **ST7789 Display**: 1.28" or 1.69" IPS TFT with PWM brightness
 - ✅ **Battery Powered**: 2×18650 cells (~5400 mAh capacity)
 - ✅ **WiFi Burst Mode**: Connect only for 10-15 seconds to save power
 - ✅ **Memory Optimized**: No numpy/pandas, minimal RAM usage
-- ✅ **Smart Sensors**: AHT20 (temp/humidity) + BMP280 (pressure)
+- ✅ **Smart Sensors**: AHT20 (temp/humidity) + BMP280 (pressure) + DS18B20 (external temp)
 
 ### Hardware Requirements
 
@@ -166,13 +168,16 @@ BLK  = GPIO 10  # PWM for brightness
 
 **Sensors (I2C):**
 ```python
-# AHT20 (Temperature/Humidity)
-# BMP280 (Pressure/Temperature)
+# AHT20 (Temperature/Humidity in case)
+# BMP280 (Pressure/Temperature in case)
 SDA = GPIO 4
 SCL = GPIO 5
+
+# DS18B20 (External Temperature, 1-Wire)
+DATA = GPIO 15
 ```
 
-**IR Receiver:** VS1838B
+**IR Receiver:** HX1838 (VS1838B compatible)
 ```python
 IR_PIN = GPIO 1  # RTC GPIO for wake_on_ext0
 ```
@@ -307,7 +312,8 @@ GPIO 11   ---->   ST7789 DC
 GPIO 10   ---->   ST7789 BLK
 GPIO 4    ---->   I2C SDA (AHT20, BMP280)
 GPIO 5    ---->   I2C SCL (AHT20, BMP280)
-GPIO 1    ---->   VS1838B IR Receiver
+GPIO 15   ---->   DS18B20 DATA (1-Wire)
+GPIO 1    ---->   HX1838 IR Receiver
 GPIO 2    ---->   Battery ADC (via divider)
 ```
 
