@@ -53,8 +53,64 @@ class PhysicalConstants:
     CONDENSATION_COEF = const(122)  # Condensation level coefficient, m/°C
     CONDENSATION_HEIGHT_COEF = const(122)  # Alternative name for same coefficient
     
-    # Location-specific (default: Vinnytsia, Ukraine)
-    ELEVATION = const(262)  # Elevation above sea level, meters
+    # ========================================================================
+    # LOCATION-SPECIFIC: VINNYTSIA, UKRAINE
+    # ========================================================================
+    
+    # Geographic coordinates
+    LATITUDE = 49.233  # degrees North
+    LONGITUDE = 28.468  # degrees East
+    ELEVATION = const(305)  # meters above sea level (CORRECTED from 262m)
+    TIMEZONE = 'Europe/Kiev'
+    
+    # Climate of Vinnytsia (continental, temperate)
+    # Average annual temperature: +7.3°C
+    # Average annual precipitation: 595 mm
+    # Average station pressure at 305m: 975-980 hPa
+    # MSLP: 1010-1020 hPa (reduced to sea level)
+    
+    # Barometric formula correction for Vinnytsia (305m)
+    # At T=15°C: p_station ≈ 976 hPa -> MSLP ≈ 1013 hPa
+    # Correction coefficient: 1.038 (instead of universal)
+    VINNYTSIA_MSLP_CORRECTION = 1.038
+    
+    # ========================================================================
+    # SOUTHERN BUG RIVER (CENTER OF VINNYTSIA)
+    # ========================================================================
+    
+    RIVER_NAME = "Південний Буг"
+    RIVER_WIDTH = 80.0  # meters (in city center)
+    RIVER_DEPTH_AVERAGE = 1.8  # meters (average depth)
+    RIVER_DEPTH_MAX = 4.5  # meters (maximum depth)
+    RIVER_CURRENT_SPEED = 0.3  # m/s (average current speed)
+    RIVER_SUBSTRATE = "змішаний"  # sand, silt, stone
+    
+    # Thermal characteristics of the river
+    RIVER_THERMAL_INERTIA = 0.12  # For river (fast response to weather)
+    RIVER_TEMP_AMPLITUDE_SUMMER = 8.0  # °C (daily temperature range in summer)
+    RIVER_TEMP_AMPLITUDE_WINTER = 2.0  # °C (lower amplitude in winter)
+    
+    # Ice regime of Southern Bug in Vinnytsia
+    ICE_FORMATION_TEMP = -5.0  # °C (average temperature for ice formation)
+    ICE_BREAKUP_TEMP = 3.0  # °C (average temperature for ice breakup)
+    ICE_COVER_DAYS_AVG = 80  # days (average ice cover duration)
+    
+    # ========================================================================
+    # WATER CHEMISTRY OF SOUTHERN BUG (GEO VINNYTSIA DATA)
+    # ========================================================================
+    
+    WATER_PH_AVERAGE = 7.8  # slightly alkaline (typically 7.5-8.2)
+    WATER_PH_MIN = 7.2
+    WATER_PH_MAX = 8.5
+    WATER_HARDNESS = 4.5  # mg-eq/L (moderately hard)
+    WATER_OXYGEN_SATURATION_SUMMER = 7.5  # mg/L (decreases in summer)
+    WATER_OXYGEN_SATURATION_WINTER = 12.0  # mg/L (increases in winter)
+    WATER_TURBIDITY = "середня"  # NTU 10-25 (depends on flood)
+    
+    # Anthropogenic pollution (city center)
+    POLLUTION_FACTOR = 1.2  # Pollution coefficient (1.0 = clean, >1.0 = polluted)
+    EUTROPHICATION_LEVEL = "помірна"  # Eutrophication from urban runoff
+    
     EMA_ALPHA = 0.3  # Exponential smoothing coefficient for sensor noise (0.1 - very smooth, 1.0 - no smoothing)
     
     # Barometric changes

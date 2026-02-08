@@ -8,6 +8,7 @@ Atmospheric pressure related calculations.
 import math
 from typing import Dict
 from ..core.constants import PhysicalConstants
+from .psychrometry import saturation_pressure
 
 
 def adjust_pressure_to_sea_level(p_station: float, t_celsius: float, elevation: float = None) -> float:
@@ -33,6 +34,51 @@ def adjust_pressure_to_sea_level(p_station: float, t_celsius: float, elevation: 
     # Barometric formula
     # 0.034163 is a constant derived from g * M / R
     p_sea_level = p_station * math.exp((0.034163 * h) / t_kelvin)
+    return p_sea_level
+
+
+def adjust_pressure_to_sea_level_precise(p_station: float, t_celsius: float, 
+                                          humidity_percent: float,
+                                          elevation: float = None) -> float:
+    """
+    Precise pressure adjustment for Vinnytsia with humidity consideration.
+    
+    Uses modified barometric formula with virtual temperature correction.
+    
+    Source: WMO Guide to Meteorological Instruments and Methods of Observation (2018)
+    Section 3.9.2: Pressure Reduction to Sea Level
+    
+    Args:
+        p_station: Station pressure in hPa
+        t_celsius: Temperature in Celsius
+        humidity_percent: Relative humidity in percent
+        elevation: Elevation in meters (defaults to PhysicalConstants.ELEVATION)
+        
+    Returns:
+        Sea level pressure in hPa
+    """
+    h = elevation if elevation is not None else PhysicalConstants.ELEVATION
+    if h == 0:
+        return p_station
+    
+    # 1. Calculate saturation vapor pressure
+    e = saturation_pressure(t_celsius) * (humidity_percent / 100.0)
+    
+    # 2. Virtual temperature (accounts for humidity)
+    # T_v = T × (1 + 0.608 × (e/p))
+    T_kelvin = t_celsius + 273.15
+    mixing_ratio = 0.622 * e / (p_station - e)  # kg water vapor / kg dry air
+    T_virtual = T_kelvin * (1 + 0.608 * mixing_ratio)
+    
+    # 3. Average virtual temperature of air column
+    # Accounts for vertical temperature gradient (0.0065 K/m)
+    T_avg = T_virtual + (h * 0.0065 / 2)
+    
+    # 4. Barometric formula with virtual temperature
+    # Constant: g*M/R = 9.80665 * 0.0289644 / 8.31446 ≈ 0.034163
+    exponent = (PhysicalConstants.g * 0.0289644 * h) / (8.31446 * T_avg)
+    p_sea_level = p_station * math.exp(exponent)
+    
     return p_sea_level
 
 
