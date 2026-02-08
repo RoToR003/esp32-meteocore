@@ -37,7 +37,8 @@
       "left": 0,
       "attrs": {
         "temperature": "23",
-        "humidity": "65"
+        "humidity": "65",
+        "comment": "DHT22 used as AHT20 simulation (same I2C interface)"
       }
     },
     {

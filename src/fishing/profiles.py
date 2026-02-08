@@ -77,7 +77,7 @@ class FishProfile:
                 'T_min': 2.0,
                 'T_max': 26.0,
                 'sigma_T': 4.0,
-                'p_opt': 755.0,
+                'p_opt': 732.0,
                 'sigma_p': 12.0,
                 'pressure_sensitivity': 0.5,
                 'DO_min': 5.0,
@@ -104,7 +104,7 @@ class FishProfile:
                 'T_min': 4.0,
                 'T_max': 28.0,
                 'sigma_T': 4.0,
-                'p_opt': 755.0,
+                'p_opt': 732.0,
                 'sigma_p': 10.0,
                 'pressure_sensitivity': 0.5,
                 'DO_min': 6.0,
@@ -182,7 +182,7 @@ class FishProfile:
                 'T_min': 8.0,
                 'T_max': 30.0,
                 'sigma_T': 4.0,
-                'p_opt': 755.0,
+                'p_opt': 732.0,
                 'sigma_p': 10.0,
                 'pressure_sensitivity': 0.8,
                 'DO_min': 5.0,
@@ -234,7 +234,7 @@ class FishProfile:
                 'T_min': 4.0,
                 'T_max': 26.0,
                 'sigma_T': 4.0,
-                'p_opt': 755.0,
+                'p_opt': 732.0,
                 'sigma_p': 10.0,
                 'pressure_sensitivity': 0.8,
                 'DO_min': 5.0,
@@ -296,7 +296,7 @@ class FishProfile:
                 'sigma_T': 4.5,  # Wide tolerance
                 
                 # PRESSURE (pike is very sensitive to pressure!)
-                'p_opt': 755.0,  # 755 mmHg = 1006.6 hPa at 305m elevation
+                'p_opt': 732.0,  # 732 mmHg = 976 hPa at 305m elevation (Vinnytsia)
                 'sigma_p': 4.0,  # Narrow tolerance (sensitive to changes)
                 'pressure_sensitivity': 0.5,
                 
@@ -344,7 +344,7 @@ class FishProfile:
                 'T_max': 26.0,
                 'sigma_T': 3.5,
                 
-                'p_opt': 755.0,
+                'p_opt': 732.0,
                 'sigma_p': 5.0,  # Less sensitive to pressure than pike
                 'pressure_sensitivity': 0.5,
                 
@@ -386,7 +386,7 @@ class FishProfile:
                 'T_max': 28.0,
                 'sigma_T': 5.0,
                 
-                'p_opt': 755.0,
+                'p_opt': 732.0,
                 'sigma_p': 6.0,  # Tolerant to pressure
                 'pressure_sensitivity': 0.8,
                 
@@ -462,7 +462,7 @@ class FishProfile:
                 'T_max': 26.0,
                 'sigma_T': 4.5,
                 
-                'p_opt': 755.0,
+                'p_opt': 732.0,
                 'sigma_p': 10.0,
                 'pressure_sensitivity': 0.4,
                 
