@@ -4,23 +4,36 @@
   "editor": "wokwi",
   "parts": [
     { "type": "board-esp32-s3-devkitc-1", "id": "esp", "top": 0, "left": 0, "attrs": {} },
-    { "type": "board-bmp280", "id": "bmp", "top": -60, "left": 150, "attrs": { "address": "0x76" } },
-    { "type": "board-ili9341-spi", "id": "lcd", "top": 50, "left": 150, "attrs": {} }
+    { "type": "board-bmp280", "id": "bmp280", "top": -100, "left": 200, "attrs": { "address": "0x76" } },
+    { "type": "board-ds18b20", "id": "ds18b20", "top": -100, "left": 350, "attrs": {} },
+    { "type": "wokwi-ir-receiver", "id": "ir1", "top": -200, "left": 200, "attrs": {} },
+    { "type": "board-ssd1306", "id": "display", "top": 100, "left": 200, "attrs": { "i2cAddress": "0x3c" } }
   ],
   "connections": [
     [ "esp:TX", "$serialMonitor:RX", "", [] ],
     [ "esp:RX", "$serialMonitor:TX", "", [] ],
-    [ "esp:GND", "bmp:GND", "black", [ "v0" ] ],
-    [ "esp:3V3", "bmp:VCC", "red", [ "v0" ] ],
-    [ "esp:4", "bmp:SDA", "green", [ "v0" ] ],
-    [ "esp:5", "bmp:SCL", "blue", [ "v0" ] ],
-    [ "esp:GND", "lcd:GND", "black", [ "v0" ] ],
-    [ "esp:3V3", "lcd:VCC", "red", [ "v0" ] ],
-    [ "esp:10", "lcd:CS", "yellow", [ "v0" ] ],
-    [ "esp:12", "lcd:RESET", "orange", [ "v0" ] ],
-    [ "esp:11", "lcd:DC", "white", [ "v0" ] ],
-    [ "esp:13", "lcd:MOSI", "blue", [ "v0" ] ],
-    [ "esp:14", "lcd:SCK", "purple", [ "v0" ] ],
-    [ "esp:3V3", "lcd:LED", "red", [ "v0" ] ]
-  ]
+    
+    ["# I2C Bus (SDA=GPIO4, SCL=GPIO5) for BMP280", "$description", "", []],
+    [ "esp:GND.1", "bmp280:GND", "black", [ "v0" ] ],
+    [ "esp:3V3", "bmp280:VCC", "red", [ "v0" ] ],
+    [ "esp:4", "bmp280:SDA", "green", [ "v0" ] ],
+    [ "esp:5", "bmp280:SCL", "blue", [ "v0" ] ],
+    
+    ["# DS18B20 External Temperature (1-Wire on GPIO15)", "$description", "", []],
+    [ "esp:GND.2", "ds18b20:GND", "black", [ "v0" ] ],
+    [ "esp:3V3.1", "ds18b20:VCC", "red", [ "v0" ] ],
+    [ "esp:15", "ds18b20:DQ", "yellow", [ "v0" ] ],
+    
+    ["# IR Receiver HX1838 (GPIO1 for wake)", "$description", "", []],
+    [ "esp:GND.3", "ir1:GND", "black", [ "v0" ] ],
+    [ "esp:3V3.2", "ir1:VCC", "red", [ "v0" ] ],
+    [ "esp:1", "ir1:DAT", "orange", [ "v0" ] ],
+    
+    ["# Display I2C (shared bus with BMP280)", "$description", "", []],
+    [ "esp:GND.4", "display:GND", "black", [ "v0" ] ],
+    [ "esp:3V3.3", "display:VCC", "red", [ "v0" ] ],
+    [ "esp:4", "display:SDA", "green", [ "h0" ] ],
+    [ "esp:5", "display:SCL", "blue", [ "h0" ] ]
+  ],
+  "dependencies": {}
 }
