@@ -139,9 +139,8 @@ def mode_cold_boot(hw):
             # WiFi burst: Sync time + weather
             def wifi_task():
                 try:
-                    # NTP sync
+                    # NTP sync (ntptime uses ua.pool.ntp.org by default for Ukraine)
                     import ntptime
-                    ntptime.host = PC.NTP_SERVER
                     ntptime.settime()
                     log(f"NTP time synced: {time.localtime()}")
                     

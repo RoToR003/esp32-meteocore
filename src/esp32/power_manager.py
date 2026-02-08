@@ -144,7 +144,7 @@ class PowerManager:
             
             # Configure IR wake (EXT0)
             if enable_ir_wake:
-                esp32.wake_on_ext0(self.ir_pin, esp32.WAKEUP_ALL_LOW)
+                esp32.wake_on_ext0(self.ir_pin, 0)  # 0 = low level wake
             
             # Deep sleep
             machine.deepsleep()

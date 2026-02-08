@@ -116,7 +116,15 @@ class CircularBuffer:
             return 0.0
         
         last = self.buffer[(self.index - 1) % self.size]
-        first_idx = (self.index - self.count) % self.size
+        
+        # Calculate first element index correctly
+        if self.count < self.size:
+            # Buffer not full yet, first element is at index 0
+            first_idx = 0
+        else:
+            # Buffer is full, first element is at current index
+            first_idx = self.index
+        
         first = self.buffer[first_idx]
         
         return last - first
