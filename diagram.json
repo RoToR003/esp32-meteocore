@@ -3,37 +3,39 @@
   "author": "Meteo Station Dev",
   "editor": "wokwi",
   "parts": [
-    { "type": "board-esp32-s3-devkitc-1", "id": "esp", "top": 0, "left": 0, "attrs": {} },
-    { "type": "board-bmp280", "id": "bmp280", "top": -100, "left": 200, "attrs": { "address": "0x76" } },
-    { "type": "board-ds18b20", "id": "ds18b20", "top": -100, "left": 350, "attrs": {} },
-    { "type": "wokwi-ir-receiver", "id": "ir1", "top": -200, "left": 200, "attrs": {} },
-    { "type": "board-ssd1306", "id": "display", "top": 100, "left": 200, "attrs": { "i2cAddress": "0x3c" } }
+    { "type": "board-esp32-s3-devkitc-1", "id": "esp", "top": -48.18, "left": 4.57, "attrs": {} },
+    { "type": "board-ds18b20", "id": "ds18b20", "top": -193.13, "left": 61.68, "attrs": {} },
+    { "type": "wokwi-ir-receiver", "id": "ir1", "top": -250.95, "left": -145.78, "attrs": {} },
+    {
+      "type": "board-ssd1306",
+      "id": "display",
+      "top": -54.46,
+      "left": 125.03,
+      "attrs": { "i2cAddress": "0x3c" }
+    },
+    { "type": "board-bmp180", "id": "bmp1", "top": -109.76, "left": -201.34, "attrs": {} },
+    { "type": "wokwi-dht22", "id": "dht1", "top": -306.9, "left": 13.8, "attrs": {} }
   ],
   "connections": [
     [ "esp:TX", "$serialMonitor:RX", "", [] ],
     [ "esp:RX", "$serialMonitor:TX", "", [] ],
-    
-    ["# I2C Bus (SDA=GPIO4, SCL=GPIO5) for BMP280", "$description", "", []],
-    [ "esp:GND.1", "bmp280:GND", "black", [ "v0" ] ],
-    [ "esp:3V3", "bmp280:VCC", "red", [ "v0" ] ],
-    [ "esp:4", "bmp280:SDA", "green", [ "v0" ] ],
-    [ "esp:5", "bmp280:SCL", "blue", [ "v0" ] ],
-    
-    ["# DS18B20 External Temperature (1-Wire on GPIO15)", "$description", "", []],
-    [ "esp:GND.2", "ds18b20:GND", "black", [ "v0" ] ],
-    [ "esp:3V3.1", "ds18b20:VCC", "red", [ "v0" ] ],
-    [ "esp:15", "ds18b20:DQ", "yellow", [ "v0" ] ],
-    
-    ["# IR Receiver HX1838 (GPIO1 for wake)", "$description", "", []],
-    [ "esp:GND.3", "ir1:GND", "black", [ "v0" ] ],
-    [ "esp:3V3.2", "ir1:VCC", "red", [ "v0" ] ],
-    [ "esp:1", "ir1:DAT", "orange", [ "v0" ] ],
-    
-    ["# Display I2C (shared bus with BMP280)", "$description", "", []],
-    [ "esp:GND.4", "display:GND", "black", [ "v0" ] ],
-    [ "esp:3V3.3", "display:VCC", "red", [ "v0" ] ],
-    [ "esp:4", "display:SDA", "green", [ "h0" ] ],
-    [ "esp:5", "display:SCL", "blue", [ "h0" ] ]
+    [ "esp:3V3", "bmp1:VIN", "red", [ "v0" ] ],
+    [ "esp:GND", "bmp1:GND", "black", [ "v0" ] ],
+    [ "esp:5", "bmp1:SCL", "blue", [ "v0" ] ],
+    [ "esp:4", "bmp1:SDA", "green", [ "v0" ] ],
+    [ "esp:3V3", "display:VCC", "red", [ "v0" ] ],
+    [ "esp:GND", "display:GND", "black", [ "v0" ] ],
+    [ "esp:5", "display:SCL", "blue", [ "v0" ] ],
+    [ "esp:4", "display:SDA", "green", [ "v0" ] ],
+    [ "esp:3V3", "dht1:VCC", "red", [ "v0" ] ],
+    [ "esp:GND", "dht1:GND", "black", [ "v0" ] ],
+    [ "esp:15", "dht1:SDA", "yellow", [ "v0" ] ],
+    [ "esp:3V3", "ds18b20:VCC", "red", [ "v0" ] ],
+    [ "esp:GND", "ds18b20:GND", "black", [ "v0" ] ],
+    [ "esp:16", "ds18b20:DQ", "orange", [ "v0" ] ],
+    [ "esp:3V3", "ir1:VCC", "red", [ "v0" ] ],
+    [ "esp:GND", "ir1:GND", "black", [ "v0" ] ],
+    [ "esp:17", "ir1:DAT", "purple", [ "v0" ] ]
   ],
   "dependencies": {}
 }
