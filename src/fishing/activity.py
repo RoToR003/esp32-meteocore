@@ -283,7 +283,11 @@ class FishActivityCalculations:
         
         # 2. Turbidity (above 30 NTU - bad for predators, good for cyprinids)
         if profile.type == 'хижак':
-            K_turbidity = 1.0 if turbidity_ntu < 20 else (1.0 - (turbidity_ntu - 20) / 50)
+            # For predators: turbidity above 20 NTU reduces visibility
+            if turbidity_ntu < 20:
+                K_turbidity = 1.0
+            else:
+                K_turbidity = max(0.1, 1.0 - (turbidity_ntu - 20) / 50)
         else:
             K_turbidity = 1.0 + 0.1 * min(turbidity_ntu / 25, 1.0)  # Peaceful fish like turbidity
         

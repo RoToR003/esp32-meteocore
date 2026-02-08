@@ -43,12 +43,12 @@ class FishSpecies(Enum):
     GRASS_CARP = "Амур білий"
     
     # LOCAL SPECIES OF SOUTHERN BUG
-    SOUTHBUG_PIKE = "southbug_pike"  # Pike of Southern Bug
-    SOUTHBUG_ZANDER = "southbug_zander"  # Zander of Southern Bug
-    SOUTHBUG_BREAM = "southbug_bream"  # Bream of Southern Bug
-    SOUTHBUG_ROACH = "southbug_roach"  # Roach of Southern Bug
-    SOUTHBUG_CHUB = "southbug_chub"  # Chub of Southern Bug
-    SOUTHBUG_CATFISH = "southbug_catfish"  # Catfish of Southern Bug
+    SOUTHBUG_PIKE = "Щука (Південний Буг)"  # Pike of Southern Bug
+    SOUTHBUG_ZANDER = "Судак (Південний Буг)"  # Zander of Southern Bug
+    SOUTHBUG_BREAM = "Лящ (Південний Буг)"  # Bream of Southern Bug
+    SOUTHBUG_ROACH = "Плітка (Південний Буг)"  # Roach of Southern Bug
+    SOUTHBUG_CHUB = "Головень (Південний Буг)"  # Chub of Southern Bug
+    SOUTHBUG_CATFISH = "Сом (Південний Буг)"  # Catfish of Southern Bug
 
 
 class LightType(Enum):
@@ -296,7 +296,7 @@ class FishProfile:
                 'sigma_T': 4.5,  # Wide tolerance
                 
                 # PRESSURE (pike is very sensitive to pressure!)
-                'p_opt': 755.0,  # 755 mmHg = 1007 hPa at 305m elevation
+                'p_opt': 755.0,  # 755 mmHg = 1006.6 hPa at 305m elevation
                 'sigma_p': 4.0,  # Narrow tolerance (sensitive to changes)
                 'pressure_sensitivity': 0.5,
                 

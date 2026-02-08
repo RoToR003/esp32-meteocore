@@ -35,11 +35,23 @@ class VinnytsiaWeatherAPI:
     
     # OpenWeatherMap API (requires key)
     OWM_BASE = "https://api.openweathermap.org/data/2.5/weather"
-    OWM_API_KEY = "YOUR_API_KEY"  # Replace with real key
+    # OWM_API_KEY should be set via environment variable: export OWM_API_KEY="your_key_here"
+    # Or pass it when initializing the class
+    OWM_API_KEY = None  # Set via environment or constructor
     
-    def __init__(self):
+    def __init__(self, owm_api_key: Optional[str] = None):
         self.cache = {}
         self.cache_expiry = {}
+        
+        # Try to get API key from environment variable if not provided
+        if owm_api_key:
+            self.OWM_API_KEY = owm_api_key
+        else:
+            try:
+                import os
+                self.OWM_API_KEY = os.environ.get('OWM_API_KEY', None)
+            except:
+                self.OWM_API_KEY = None
     
     def get_current_data(self) -> Dict:
         """Get current weather data for Vinnytsia"""
