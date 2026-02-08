@@ -250,6 +250,49 @@ class FishActivityCalculations:
         
         K = K_rain * K_storm * K_temp_change
         return max(0.1, min(2.0, K))
+    
+    @staticmethod
+    def K_river_conditions(current_speed: float, turbidity_ntu: float, 
+                          pollution_factor: float, profile: FishProfile) -> float:
+        """
+        River conditions coefficient (specific for Southern Bug).
+        
+        Accounts for:
+        1. Current speed (0.2-0.5 m/s optimal for most fish)
+        2. Turbidity (affects visibility and oxygen)
+        3. Pollution (anthropogenic factor from city center)
+        
+        Args:
+            current_speed: Current speed in m/s
+            turbidity_ntu: Water turbidity in NTU
+            pollution_factor: Pollution coefficient (1.0 = clean, >1.0 = polluted)
+            profile: Fish profile with species-specific tolerances
+            
+        Returns:
+            River conditions coefficient (0.1-1.5)
+        """
+        # 1. Current
+        current_opt = 0.3  # m/s (moderate current)
+        if hasattr(profile, 'current_preference'):
+            if profile.current_preference == 'slow':
+                current_opt = 0.2
+            elif profile.current_preference == 'fast':
+                current_opt = 0.5
+        
+        K_current = math.exp(-((current_speed - current_opt)**2) / (2 * 0.15**2))
+        
+        # 2. Turbidity (above 30 NTU - bad for predators, good for cyprinids)
+        if profile.type == 'хижак':
+            K_turbidity = 1.0 if turbidity_ntu < 20 else (1.0 - (turbidity_ntu - 20) / 50)
+        else:
+            K_turbidity = 1.0 + 0.1 * min(turbidity_ntu / 25, 1.0)  # Peaceful fish like turbidity
+        
+        # 3. Pollution
+        tolerance = profile.pollution_tolerance if hasattr(profile, 'pollution_tolerance') else 0.7
+        K_pollution = 1.0 - (pollution_factor - 1.0) * (1.0 - tolerance)
+        
+        K_river = K_current * K_turbidity * K_pollution
+        return max(0.1, min(1.5, K_river))
 
 
 class FishBiteForecastSystem:
@@ -291,6 +334,11 @@ class FishBiteForecastSystem:
         temp_change_24h = conditions.get('temp_change_24h', 0.0)
         pH = conditions.get('pH', 7.5)
         
+        # River-specific parameters
+        river_current = conditions.get('river_current_speed', PhysicalConstants.RIVER_CURRENT_SPEED)
+        turbidity = conditions.get('turbidity_ntu', 15.0)
+        pollution = conditions.get('pollution_factor', PhysicalConstants.POLLUTION_FACTOR)
+        
         # Якщо кисень не вказаний - розраховуємо
         if DO is None:
             DO_sat = self.chem.oxygen_saturation(T_water)
@@ -311,9 +359,12 @@ class FishBiteForecastSystem:
                                        post_storm_hours, temp_change_24h)
         K_pH = self.chem.ph_optimal_coefficient(pH)
         
-        # КІАР (мультиплікативна модель)
+        # River conditions coefficient (for Southern Bug)
+        K_river = self.calc.K_river_conditions(river_current, turbidity, pollution, self.profile)
+        
+        # КІАР (мультиплікативна модель з річковим фактором)
         KIAR = (K_temp * K_pressure * K_oxygen * K_light * K_wind *
-                K_moon * K_time * K_season * K_weather * K_pH) * 100.0
+                K_moon * K_time * K_season * K_weather * K_pH * K_river) * 100.0
         
         # Обмеження
         KIAR = max(0, min(200, KIAR))
@@ -353,7 +404,8 @@ class FishBiteForecastSystem:
                 'K_time_of_day': round(K_time, 3),
                 'K_season': round(K_season, 3),
                 'K_weather': round(K_weather, 3),
-                'K_pH': round(K_pH, 3)
+                'K_pH': round(K_pH, 3),
+                'K_river': round(K_river, 3)
             },
             'conditions': conditions,
             'fish_profile': {
