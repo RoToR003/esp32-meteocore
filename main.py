@@ -19,6 +19,9 @@ Modes:
 Author: ESP32-MeteoCore Project
 """
 
+import sys
+import json
+
 # Forecast system imports
 try:
     from src.meteo.forecast import WeatherForecastSystem
@@ -193,8 +196,9 @@ def read_sensors(hw):
             'hour': hour_of_day,
             'day_of_year': day_of_year,
             'external_temp': water_temp,  # Alias for compatibility
-            'illuminance': DEFAULT_ILLUMINANCE_LUX,
-            'wind_speed': DEFAULT_WIND_SPEED_MS
+            'illuminance': DEFAULT_ILLUMINANCE_LUX,  # Placeholder - requires light sensor
+            'wind_speed': DEFAULT_WIND_SPEED_MS,  # Placeholder - requires wind sensor
+            'sensors_complete': hw.get('ds18b20') is not None  # Flag for actual vs placeholder values
         }
     except Exception as e:
         log(f"Error reading sensors: {e}", "ERROR")
@@ -242,7 +246,6 @@ def generate_forecasts(sensor_data):
         }
     except Exception as e:
         log(f"Error generating forecasts: {e}", "ERROR")
-        import sys
         sys.print_exception(e)
         return None
 
@@ -250,7 +253,6 @@ def generate_forecasts(sensor_data):
 def save_weather_log(data, filename='weather_log.json'):
     """Save weather data to JSON log file."""
     try:
-        import json
         import time
         
         log_entry = {
