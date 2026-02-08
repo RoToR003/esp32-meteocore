@@ -150,6 +150,75 @@ class PhysicalConstants:
     AERATION_COEFFICIENT = 0.001  # Wind aeration coefficient
     WIND_TURBULENCE_COEF = 0.001  # Wind turbulence coefficient
 
+    # ========================================================================
+    # ESP32-S3 HARDWARE CONFIGURATION
+    # ========================================================================
+
+    # Display ST7789 (SPI)
+    DISPLAY_WIDTH = const(240)   # 1.28" or 1.69"
+    DISPLAY_HEIGHT = const(240)  # or 280 for 1.69"
+    DISPLAY_SCK = const(14)
+    DISPLAY_MOSI = const(13)
+    DISPLAY_RST = const(12)
+    DISPLAY_DC = const(11)
+    DISPLAY_BLK = const(10)  # PWM for brightness
+    DISPLAY_ROTATION = 0  # 0, 90, 180, 270
+
+    # Sensors I2C
+    SENSOR_SDA = const(4)
+    SENSOR_SCL = const(5)
+    SENSOR_FREQ = const(100000)  # 100 kHz
+
+    # AHT20 (replacing BME280 for humidity!)
+    AHT20_ADDRESS = const(0x38)
+
+    # BMP280 (pressure only)
+    BMP280_ADDRESS = const(0x76)  # or 0x77
+
+    # IR Receiver VS1838B
+    IR_PIN = const(1)  # RTC GPIO for wake_on_ext0
+
+    # Battery ADC
+    BAT_ADC_PIN = const(2)
+    BAT_VOLTAGE_DIVIDER = 2.0  # 100k/100k = 1:1
+    BAT_FULL = 4.2  # Volts (100%)
+    BAT_EMPTY = 3.2  # Volts (0%)
+
+    # ========================================================================
+    # DEEP SLEEP CONFIGURATION
+    # ========================================================================
+
+    # Wake intervals
+    SLEEP_DURATION_NORMAL = const(3600)  # 1 hour (seconds)
+    SLEEP_DURATION_SHORT = const(300)    # 5 min (for testing)
+    SLEEP_DURATION_IR_DISPLAY = const(15)  # 15 sec (after IR wake)
+
+    # Wake reasons (for detection)
+    WAKE_REASON_COLD_BOOT = 0
+    WAKE_REASON_TIMER = 1
+    WAKE_REASON_IR_REMOTE = 2
+
+    # WiFi settings
+    WIFI_TIMEOUT = const(10)  # seconds
+    WIFI_BURST_MODE = True  # Turn off after API call
+
+    # NTP settings for Vinnytsia
+    NTP_SERVER = "ua.pool.ntp.org"
+    NTP_TIMEZONE_OFFSET = 2  # UTC+2 (winter) / UTC+3 (summer DST)
+
+    # ========================================================================
+    # POWER MANAGEMENT
+    # ========================================================================
+
+    # Target current consumption
+    CURRENT_DEEPSLEEP = 0.03  # mA (30 µA)
+    CURRENT_ACTIVE_AVG = 1.2  # mA (average per hour)
+    CURRENT_IR_WAKE = 35.0  # mA (display + sensors, no WiFi)
+
+    # Battery capacity
+    BATTERY_CAPACITY = 5400  # mAh (2x 2700 in parallel)
+    ESTIMATED_RUNTIME_DAYS = 180  # ~6 months
+
 
 # For backward compatibility
 g = PhysicalConstants.g

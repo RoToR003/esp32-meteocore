@@ -10,3 +10,7 @@ __pycache__/
 dist/
 build/
 .pytest_cache/
+
+# MicroPython
+*.mpy
+.frozen/
