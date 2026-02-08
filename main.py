@@ -38,11 +38,18 @@ def init_hardware():
     try:
         from machine import I2C, Pin
         from src.core.constants import PhysicalConstants as PC
+        from src.core.wokwi_detect import get_environment, log_environment
         from src.esp32.power_manager import PowerManager
         from src.esp32.aht20 import AHT20
         from src.esp32.bmp280 import BMP280Sensor
-        from src.esp32.st7789_display import MeteoDisplay
+        from src.esp32.display_wrapper import get_display
+        from src.esp32.st7789_display_enhanced import MeteoDisplayEnhanced
         from src.esp32.ds18b20 import DS18B20
+        from src.esp32.pressure_history import PressureHistory
+        
+        # Detect environment (Wokwi vs hardware)
+        env = get_environment()
+        log_environment()
         
         # I2C bus
         i2c = I2C(
@@ -54,8 +61,16 @@ def init_hardware():
         
         log(f"I2C devices found: {[hex(x) for x in i2c.scan()]}")
         
-        # Sensors
-        aht20 = AHT20(i2c)
+        # Sensors - with DHT22 fallback for Wokwi
+        if env['platform'] == 'wokwi':
+            # Wokwi: Use DHT22 on I2C pins as AHT20 simulation
+            log("Wokwi mode: Using DHT22 for AHT20 simulation")
+            aht20_pin = Pin(PC.SENSOR_SDA)  # DHT22 connected to SDA pin
+            aht20 = AHT20(i2c=i2c, pin=aht20_pin)
+        else:
+            # Real hardware: Use AHT20
+            aht20 = AHT20(i2c=i2c)
+        
         bmp280 = BMP280Sensor(i2c)
         
         # DS18B20 external temperature sensor
@@ -67,11 +82,16 @@ def init_hardware():
             except Exception as e:
                 log(f"DS18B20 init failed: {e}", "WARNING")
         
-        # Display
-        display = MeteoDisplay(width=PC.DISPLAY_WIDTH, height=PC.DISPLAY_HEIGHT)
+        # Display - auto-detect ST7789/ILI9341/Mock
+        display_driver = get_display(width=PC.DISPLAY_WIDTH, height=PC.DISPLAY_HEIGHT)
+        display = MeteoDisplayEnhanced(display_driver, PC.DISPLAY_WIDTH, PC.DISPLAY_HEIGHT)
         
         # Power manager
         power = PowerManager()
+        
+        # Pressure history
+        pressure_history = PressureHistory(max_size=24)
+        pressure_history.load_from_nvs()  # Load from NVS if available
         
         return {
             'i2c': i2c,
@@ -79,7 +99,9 @@ def init_hardware():
             'bmp280': bmp280,
             'ds18b20': ds18b20,
             'display': display,
-            'power': power
+            'power': power,
+            'pressure_history': pressure_history,
+            'environment': env
         }
     except Exception as e:
         log(f"Error initializing hardware: {e}", "ERROR")
@@ -123,6 +145,12 @@ def read_sensors(hw):
             elevation=PC.ELEVATION
         )
         
+        # Add to pressure history
+        if hw.get('pressure_history'):
+            hw['pressure_history'].add(pressure_mslp, time.time())
+            hw['pressure_history'].save_to_nvs()
+            log(f"Pressure history: {hw['pressure_history']}")
+        
         # Battery
         battery_percent = hw['power'].get_battery_percent()
         
@@ -131,6 +159,7 @@ def read_sensors(hw):
             'humidity': aht_data['humidity'],
             'pressure_station': bmp_data['pressure'],
             'pressure_mslp': pressure_mslp,
+            'pressure_trend': hw.get('pressure_history').get_trend() if hw.get('pressure_history') else 0,
             'temperature_water': water_temp,  # Renamed from temperature_external
             'battery': battery_percent,
             'timestamp': time.time()
@@ -151,9 +180,8 @@ def mode_cold_boot(hw):
         
         # Show "Booting..." on display
         hw['display'].clear()
-        if hw['display'].display and hw['display'].st7789:
-            hw['display'].display.text("METEO STATION", 10, 100, hw['display'].st7789.WHITE)
-            hw['display'].display.text("Booting...", 10, 130, hw['display'].st7789.GREEN)
+        hw['display'].display.text("METEO STATION", 60, 140, 0xFFFF)
+        hw['display'].display.text("Booting...", 70, 160, 0x07E0)
         
         # Read sensors
         data = read_sensors(hw)
@@ -179,15 +207,14 @@ def mode_cold_boot(hw):
             
             api_data = hw['power'].wifi_burst(wifi_task, timeout=15)
             
-            # Display data
+            # Display data with enhanced display
             display_data = {
                 **data,
-                'pressure': data['pressure_mslp'],
                 'forecast': 'Initialized',
                 'fish_activity': 'Unknown'
             }
             
-            hw['display'].show_meteo_data(display_data)
+            hw['display'].show_data(display_data, hw.get('pressure_history'))
             time.sleep(5)
         
         # Enter deep sleep (1 hour)
@@ -221,8 +248,6 @@ def mode_timer_wake(hw):
                     # api = VinnytsiaWeatherAPI()
                     # api_data = api.get_current_data()
                     
-                    # Save pressure history (TODO: implement NVS storage)
-                    
                     return {'updated': True}
                 except Exception as e:
                     log(f"WiFi task error: {e}", "ERROR")
@@ -230,15 +255,14 @@ def mode_timer_wake(hw):
             
             api_data = hw['power'].wifi_burst(wifi_task, timeout=10)
             
-            # Display
+            # Display with enhanced display
             hw['display'].display_on()
             display_data = {
                 **data,
-                'pressure': data['pressure_mslp'],
                 'forecast': 'Updated',
                 'fish_activity': 'Good'
             }
-            hw['display'].show_meteo_data(display_data)
+            hw['display'].show_data(display_data, hw.get('pressure_history'))
             time.sleep(5)
         
         # Sleep
@@ -264,15 +288,14 @@ def mode_ir_wake(hw):
         data = read_sensors(hw)
         
         if data:
-            # Display
+            # Display with enhanced display
             hw['display'].display_on()
             display_data = {
                 **data,
-                'pressure': data['pressure_mslp'],
                 'forecast': 'Cached',
                 'fish_activity': 'Cached'
             }
-            hw['display'].show_meteo_data(display_data)
+            hw['display'].show_data(display_data, hw.get('pressure_history'))
             
             # Keep display on for 15 sec
             time.sleep(PC.SLEEP_DURATION_IR_DISPLAY)
