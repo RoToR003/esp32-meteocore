@@ -7,7 +7,8 @@ Hardware:
 - ST7789 1.28" Display
 - AHT20 (Temp/Humidity)
 - BMP280 (Pressure)
-- VS1838B IR Receiver
+- DS18B20 (External Temp, 1-Wire)
+- HX1838 IR Receiver (VS1838B compatible)
 - 2x18650 Battery
 
 Modes:
@@ -41,6 +42,7 @@ def init_hardware():
         from src.esp32.aht20 import AHT20
         from src.esp32.bmp280 import BMP280Sensor
         from src.esp32.st7789_display import MeteoDisplay
+        from src.esp32.ds18b20 import DS18B20
         
         # I2C bus
         i2c = I2C(
@@ -56,6 +58,15 @@ def init_hardware():
         aht20 = AHT20(i2c)
         bmp280 = BMP280Sensor(i2c)
         
+        # DS18B20 external temperature sensor
+        ds18b20 = None
+        if PC.DS18B20_ENABLED:
+            try:
+                ds18b20 = DS18B20(Pin(PC.DS18B20_PIN))
+                log("DS18B20 external temperature sensor initialized")
+            except Exception as e:
+                log(f"DS18B20 init failed: {e}", "WARNING")
+        
         # Display
         display = MeteoDisplay(width=PC.DISPLAY_WIDTH, height=PC.DISPLAY_HEIGHT)
         
@@ -66,6 +77,7 @@ def init_hardware():
             'i2c': i2c,
             'aht20': aht20,
             'bmp280': bmp280,
+            'ds18b20': ds18b20,
             'display': display,
             'power': power
         }
@@ -93,6 +105,16 @@ def read_sensors(hw):
         # Average temperature from both sensors
         temp_avg = (aht_data['temperature'] + bmp_data['temperature']) / 2
         
+        # External temperature (DS18B20)
+        ext_temp = None
+        if hw.get('ds18b20'):
+            try:
+                ext_data = hw['ds18b20'].read()
+                ext_temp = ext_data.get('temperature_external')
+                log(f"DS18B20: {ext_temp}°C")
+            except Exception as e:
+                log(f"DS18B20 read error: {e}", "WARNING")
+        
         # Precise MSLP calculation
         pressure_mslp = adjust_pressure_to_sea_level_precise(
             bmp_data['pressure'],
@@ -109,6 +131,7 @@ def read_sensors(hw):
             'humidity': aht_data['humidity'],
             'pressure_station': bmp_data['pressure'],
             'pressure_mslp': pressure_mslp,
+            'temperature_external': ext_temp,
             'battery': battery_percent,
             'timestamp': time.time()
         }

@@ -9,5 +9,8 @@ micropython-bmp180
 micropython-umqtt.simple
 micropython-ssd1306
 
+# Note: DS18B20 support (onewire and ds18x20 modules) is built into 
+# MicroPython firmware and does not require separate installation.
+
 # Note: Some libraries may need manual installation
 # See: https://docs.micropython.org/en/latest/reference/packages.html

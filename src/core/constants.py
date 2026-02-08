@@ -175,7 +175,11 @@ class PhysicalConstants:
     # BMP280 (pressure only)
     BMP280_ADDRESS = const(0x76)  # or 0x77
 
-    # IR Receiver VS1838B
+    # DS18B20 (1-Wire temperature sensor)
+    DS18B20_PIN = const(15)  # GPIO 15 for 1-Wire bus
+    DS18B20_ENABLED = True
+
+    # IR Receiver HX1838 (or compatible VS1838B)
     IR_PIN = const(1)  # RTC GPIO for wake_on_ext0
 
     # Battery ADC
