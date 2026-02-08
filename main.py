@@ -19,6 +19,15 @@ Modes:
 Author: ESP32-MeteoCore Project
 """
 
+# Forecast system imports
+try:
+    from src.meteo.forecast import WeatherForecastSystem
+    from src.fishing.activity import FishBiteForecastSystem
+    from src.fishing.profiles import FishSpecies
+    FORECAST_AVAILABLE = True
+except ImportError:
+    FORECAST_AVAILABLE = False
+
 
 def log(message, level="INFO"):
     """Simple logging function."""
@@ -147,27 +156,122 @@ def read_sensors(hw):
         )
         
         # Add to pressure history
+        pressure_trend_3h = 0.0
         if hw.get('pressure_history'):
             hw['pressure_history'].add(pressure_mslp, time.time())
             hw['pressure_history'].save_to_nvs()
+            pressure_trend_3h = hw['pressure_history'].get_trend()
             log(f"Pressure history: {hw['pressure_history']}")
         
         # Battery
         battery_percent = hw['power'].get_battery_percent()
         
+        # Get current time info for forecasts
+        try:
+            current_time = time.localtime()
+            hour_of_day = current_time[3]  # Hour (0-23)
+            day_of_year = current_time[7]  # Day of year (1-366)
+        except:
+            hour_of_day = 12
+            day_of_year = 180
+        
         return {
             'temperature': temp_avg,
             'humidity': aht_data['humidity'],
             'pressure_station': bmp_data['pressure'],
+            'pressure_sea_level': pressure_mslp,  # Added for forecast compatibility
             'pressure_mslp': pressure_mslp,
-            'pressure_trend': hw.get('pressure_history').get_trend() if hw.get('pressure_history') else 0,
+            'pressure_trend_3h': pressure_trend_3h,
             'temperature_water': water_temp,  # Renamed from temperature_external
             'battery': battery_percent,
-            'timestamp': time.time()
+            'timestamp': time.time(),
+            'hour': hour_of_day,
+            'day_of_year': day_of_year,
+            'external_temp': water_temp,  # Alias for compatibility
+            'illuminance': 5000.0,  # Default value (would need light sensor)
+            'wind_speed': 2.0  # Default value (would need wind sensor)
         }
     except Exception as e:
         log(f"Error reading sensors: {e}", "ERROR")
         return None
+
+
+def generate_forecasts(sensor_data):
+    """Generate weather and fish bite forecasts."""
+    if not FORECAST_AVAILABLE:
+        log("Forecast modules not available", "WARNING")
+        return None
+    
+    try:
+        # Convert pressure from hPa to mmHg for fish forecast
+        pressure_mmHg = sensor_data['pressure_sea_level'] * 0.750062
+        
+        # Fish bite forecast (Southern Bug Pike)
+        fish_forecast = FishBiteForecastSystem(FishSpecies.SOUTHBUG_PIKE)
+        
+        conditions = {
+            'water_temp_celsius': sensor_data.get('external_temp', 15.0),
+            'air_temp_celsius': sensor_data['temperature'],
+            'pressure_mmHg': pressure_mmHg,
+            'pressure_change_3h_mmHg': sensor_data.get('pressure_trend_3h', 0.0) * 0.750062,
+            'hour_of_day': sensor_data.get('hour', 12.0),
+            'day_of_year': sensor_data.get('day_of_year', 180),
+            'illuminance_lux': sensor_data.get('illuminance', 5000.0),
+            'wind_speed_ms': sensor_data.get('wind_speed', 2.0),
+        }
+        
+        kiar = fish_forecast.calculate_KIAR(conditions)
+        
+        # Simple weather interpretation based on pressure trend
+        pressure_trend = sensor_data.get('pressure_trend_3h', 0.0)
+        if pressure_trend < -1.5:
+            weather_forecast = "Погода погіршується"
+        elif pressure_trend > 1.5:
+            weather_forecast = "Погода покращується"
+        else:
+            weather_forecast = "Погода стабільна"
+        
+        return {
+            'weather': weather_forecast,
+            'fish': kiar
+        }
+    except Exception as e:
+        log(f"Error generating forecasts: {e}", "ERROR")
+        import sys
+        sys.print_exception(e)
+        return None
+
+
+def save_weather_log(data, filename='weather_log.json'):
+    """Save weather data to JSON log file."""
+    try:
+        import json
+        import time
+        
+        log_entry = {
+            'timestamp': time.time(),
+            'data': data
+        }
+        
+        # Append to log file
+        try:
+            with open(filename, 'r') as f:
+                logs = json.load(f)
+        except:
+            logs = []
+        
+        logs.append(log_entry)
+        
+        # Keep only last 168 entries (1 week of hourly data)
+        if len(logs) > 168:
+            logs = logs[-168:]
+        
+        with open(filename, 'w') as f:
+            json.dump(logs, f)
+            
+        log(f"Saved weather log: {len(logs)} entries")
+    except Exception as e:
+        log(f"Error saving weather log: {e}", "WARNING")
 
 
 def mode_cold_boot(hw):
@@ -188,6 +292,12 @@ def mode_cold_boot(hw):
         data = read_sensors(hw)
         
         if data:
+            # Generate forecasts
+            forecasts = generate_forecasts(data)
+            
+            # Save weather log
+            save_weather_log(data)
+            
             # WiFi burst: Sync time + weather
             def wifi_task():
                 try:
@@ -211,8 +321,8 @@ def mode_cold_boot(hw):
             # Display data with enhanced display
             display_data = {
                 **data,
-                'forecast': 'Initialized',
-                'fish_activity': 'Unknown'
+                'forecast': forecasts['weather'] if forecasts else 'Initialized',
+                'fish_activity': f"KIAR: {forecasts['fish']['KIAR_percent']:.0f}%" if forecasts and forecasts.get('fish') else 'Unknown'
             }
             
             hw['display'].show_data(display_data, hw.get('pressure_history'))
@@ -241,6 +351,12 @@ def mode_timer_wake(hw):
         data = read_sensors(hw)
         
         if data:
+            # Generate forecasts
+            forecasts = generate_forecasts(data)
+            
+            # Save weather log
+            save_weather_log(data)
+            
             # WiFi burst: Update weather
             def wifi_task():
                 try:
@@ -260,8 +376,8 @@ def mode_timer_wake(hw):
             hw['display'].display_on()
             display_data = {
                 **data,
-                'forecast': 'Updated',
-                'fish_activity': 'Good'
+                'forecast': forecasts['weather'] if forecasts else 'Updated',
+                'fish_activity': f"KIAR: {forecasts['fish']['KIAR_percent']:.0f}%" if forecasts and forecasts.get('fish') else 'Good'
             }
             hw['display'].show_data(display_data, hw.get('pressure_history'))
             time.sleep(5)
