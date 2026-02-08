@@ -11,17 +11,30 @@
       "attrs": {}
     },
     {
+      "type": "wokwi-ili9341",
+      "id": "display",
+      "top": 0,
+      "left": 300,
+      "attrs": {
+        "width": "240",
+        "height": "320"
+      }
+    },
+    {
       "type": "board-bmp280",
       "id": "bmp280",
-      "top": 100,
-      "left": 200,
-      "attrs": {}
+      "top": 350,
+      "left": 0,
+      "attrs": {
+        "temperature": "22.5",
+        "pressure": "1013.25"
+      }
     },
     {
       "type": "wokwi-dht22",
       "id": "aht20_sim",
-      "top": 200,
-      "left": 200,
+      "top": 400,
+      "left": 0,
       "attrs": {
         "temperature": "23",
         "humidity": "65"
@@ -30,8 +43,8 @@
     {
       "type": "board-ds18b20",
       "id": "ds18b20",
-      "top": 300,
-      "left": 200,
+      "top": 450,
+      "left": 0,
       "attrs": {
         "temperature": "18.5"
       }
@@ -39,8 +52,8 @@
     {
       "type": "wokwi-ir-receiver",
       "id": "ir1",
-      "top": 400,
-      "left": 200,
+      "top": 500,
+      "left": 0,
       "attrs": {}
     }
   ],
@@ -48,21 +61,30 @@
     ["esp:TX", "$serialMonitor:RX", "", []],
     ["esp:RX", "$serialMonitor:TX", "", []],
     
-    ["esp:GND.1", "bmp280:GND", "black", ["h0"]],
+    ["esp:GND.1", "display:GND", "black", ["h0"]],
+    ["esp:3V3", "display:VCC", "red", ["h0"]],
+    ["esp:14", "display:SCK", "yellow", ["h0"]],
+    ["esp:13", "display:MOSI", "green", ["h0"]],
+    ["esp:12", "display:RST", "blue", ["h0"]],
+    ["esp:11", "display:DC", "purple", ["h0"]],
+    ["esp:10", "display:BL", "white", ["h0"]],
+    ["esp:9", "display:CS", "orange", ["h0"]],
+    
+    ["esp:GND.2", "bmp280:GND", "black", ["h0"]],
     ["esp:3V3", "bmp280:VCC", "red", ["h0"]],
     ["esp:4", "bmp280:SDA", "green", ["h0"]],
     ["esp:5", "bmp280:SCL", "blue", ["h0"]],
     
-    ["esp:GND.2", "aht20_sim:GND", "black", ["h0"]],
+    ["esp:GND.3", "aht20_sim:GND", "black", ["h0"]],
     ["esp:3V3", "aht20_sim:VCC", "red", ["h0"]],
     ["esp:4", "aht20_sim:SDA", "green", ["h0"]],
     ["esp:5", "aht20_sim:SCL", "blue", ["h0"]],
     
-    ["esp:GND.3", "ds18b20:GND", "black", ["h0"]],
+    ["esp:GND.4", "ds18b20:GND", "black", ["h0"]],
     ["esp:3V3", "ds18b20:VCC", "red", ["h0"]],
     ["esp:15", "ds18b20:DQ", "yellow", ["h0"]],
     
-    ["esp:GND.4", "ir1:GND", "black", ["h0"]],
+    ["esp:GND.5", "ir1:GND", "black", ["h0"]],
     ["esp:3V3", "ir1:VCC", "red", ["h0"]],
     ["esp:1", "ir1:OUT", "purple", ["h0"]]
   ],

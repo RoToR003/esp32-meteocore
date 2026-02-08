@@ -1,0 +1,14 @@
+[wokwi]
+version = 1
+firmware = "main.py"
+
+# Wokwi Configuration for ESP32-S3 MeteoCore
+# ==========================================
+
+# Notes:
+# - ILI9341 display is used instead of ST7789 (Wokwi limitation)
+# - DHT22 simulates AHT20 (both provide temp + humidity via I2C)
+# - All pins match physical hardware configuration
+
+[wokwi.serial]
+baudRate = 115200

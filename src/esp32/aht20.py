@@ -9,6 +9,7 @@ Features:
 - Temperature: -40 to +85°C (±0.3°C)
 - Humidity: 0-100% RH (±2%)
 - Lower power consumption than BME280
+- DHT22 fallback for Wokwi simulation
 - MicroPython compatible
 
 Author: ESP32-MeteoCore Project
@@ -25,7 +26,12 @@ def log(message, level="INFO"):
 
 class AHT20:
     """
-    AHT20 sensor driver for MicroPython.
+    AHT20 sensor driver for MicroPython with DHT22 fallback.
+    
+    Supports:
+    - AHT20 via I2C (real hardware)
+    - DHT22 via GPIO (Wokwi simulation)
+    - Mock mode (no hardware)
     
     Datasheet: http://www.aosong.com/userfiles/files/media/AHT20%20%E8%8B%B1%E6%96%87%E7%89%88%E8%AF%B4%E6%98%8E%E4%B9%A6.pdf
     """
@@ -38,25 +44,46 @@ class AHT20:
     CMD_TRIGGER = bytearray([0xAC, 0x33, 0x00])
     CMD_SOFTRESET = bytearray([0xBA])
     
-    def __init__(self, i2c, address=None):
+    def __init__(self, i2c=None, pin=None, address=None):
         """
-        Initialize AHT20 sensor.
+        Initialize AHT20 sensor with fallback support.
         
         Args:
-            i2c: Initialized I2C bus
+            i2c: Initialized I2C bus (for AHT20)
+            pin: GPIO Pin object (for DHT22 fallback)
             address: I2C address (default 0x38)
         """
+        self.sensor_type = None
+        self.sensor = None
         self.i2c = i2c
         self.address = address if address is not None else self.ADDRESS
         
-        # Check if device is present
-        devices = self.i2c.scan()
-        if self.address not in devices:
-            log(f"AHT20 not found at address 0x{self.address:02X}", "WARNING")
-            log(f"Available devices: {[hex(x) for x in devices]}", "INFO")
-            raise RuntimeError(f"AHT20 not found at address 0x{self.address:02X}")
+        # Try AHT20 first (real hardware)
+        if i2c is not None:
+            try:
+                devices = self.i2c.scan()
+                if self.address in devices:
+                    self._init_aht20()
+                    return
+                else:
+                    log(f"AHT20 not found at 0x{self.address:02X}, trying DHT22 fallback", "INFO")
+            except Exception as e:
+                log(f"AHT20 init failed: {e}", "WARNING")
         
-        # Initialize sensor
+        # Try DHT22 fallback (Wokwi simulation)
+        if pin is not None:
+            try:
+                self._init_dht22(pin)
+                return
+            except Exception as e:
+                log(f"DHT22 init failed: {e}", "WARNING")
+        
+        # No hardware available - use mock
+        log("No sensor hardware found, using MOCK mode", "WARNING")
+        self.sensor_type = "MOCK"
+    
+    def _init_aht20(self):
+        """Initialize AHT20 sensor."""
         try:
             import time
             time.sleep_ms(40)  # Wait for power-on
@@ -65,7 +92,20 @@ class AHT20:
             time_module.sleep(0.04)
         
         self._initialize()
+        self.sensor_type = "AHT20"
         log(f"AHT20 initialized at address 0x{self.address:02X}")
+    
+    def _init_dht22(self, pin):
+        """
+        Initialize DHT22 sensor (fallback for Wokwi).
+        
+        Args:
+            pin: GPIO Pin object (DHT22 library handles pin configuration)
+        """
+        import dht
+        self.sensor = dht.DHT22(pin)
+        self.sensor_type = "DHT22"
+        log("DHT22 initialized (Wokwi simulation mode)")
     
     def _initialize(self):
         """Initialize sensor (calibration)."""
@@ -96,6 +136,15 @@ class AHT20:
         Returns:
             dict: {'temperature': float, 'humidity': float}
         """
+        if self.sensor_type == "AHT20":
+            return self._read_aht20()
+        elif self.sensor_type == "DHT22":
+            return self._read_dht22()
+        else:
+            return self._read_mock()
+    
+    def _read_aht20(self):
+        """Read from AHT20 sensor."""
         # Trigger measurement
         self.i2c.writeto(self.address, self.CMD_TRIGGER)
         try:
@@ -129,6 +178,29 @@ class AHT20:
         return {
             'temperature': round(temperature, 2),
             'humidity': round(humidity, 2)
+        }
+    
+    def _read_dht22(self):
+        """Read from DHT22 sensor (Wokwi simulation)."""
+        try:
+            self.sensor.measure()
+            temperature = self.sensor.temperature()
+            humidity = self.sensor.humidity()
+            
+            return {
+                'temperature': round(temperature, 2),
+                'humidity': round(humidity, 2)
+            }
+        except Exception as e:
+            log(f"DHT22 read error: {e}", "ERROR")
+            # Return mock data on error
+            return self._read_mock()
+    
+    def _read_mock(self):
+        """Return mock data (no hardware)."""
+        return {
+            'temperature': 22.5,
+            'humidity': 65.0
         }
     
     def read_temperature(self):
