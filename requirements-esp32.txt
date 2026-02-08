@@ -1,0 +1,13 @@
+# Requirements for ESP32/MicroPython
+
+# Install these using upip or mip on your ESP32:
+#   import upip
+#   upip.install('micropython-bme280')
+
+micropython-bme280
+micropython-bmp180
+micropython-umqtt.simple
+micropython-ssd1306
+
+# Note: Some libraries may need manual installation
+# See: https://docs.micropython.org/en/latest/reference/packages.html
