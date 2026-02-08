@@ -18,7 +18,7 @@ def log(message, level="INFO"):
     """Simple logging function for both CPython and MicroPython."""
     try:
         print(f"[{level}] DS18B20: {message}")
-    except:
+    except Exception:
         pass
 
 
@@ -91,7 +91,7 @@ class DS18B20:
             try:
                 import time
                 time.sleep_ms(750)
-            except:
+            except AttributeError:
                 import time as time_module
                 time_module.sleep(0.75)
             
@@ -139,7 +139,7 @@ class DS18B20:
             try:
                 import time
                 time.sleep_ms(750)
-            except:
+            except AttributeError:
                 import time as time_module
                 time_module.sleep(0.75)
             
