@@ -28,6 +28,10 @@ try:
 except ImportError:
     FORECAST_AVAILABLE = False
 
+# Default sensor values for forecast when actual sensors not available
+DEFAULT_ILLUMINANCE_LUX = 5000.0  # Typical daylight conditions
+DEFAULT_WIND_SPEED_MS = 2.0  # Light breeze
+
 
 def log(message, level="INFO"):
     """Simple logging function."""
@@ -156,12 +160,13 @@ def read_sensors(hw):
         )
         
         # Add to pressure history
-        pressure_trend_3h = 0.0
         if hw.get('pressure_history'):
             hw['pressure_history'].add(pressure_mslp, time.time())
             hw['pressure_history'].save_to_nvs()
             pressure_trend_3h = hw['pressure_history'].get_trend()
             log(f"Pressure history: {hw['pressure_history']}")
+        else:
+            pressure_trend_3h = 0.0
         
         # Battery
         battery_percent = hw['power'].get_battery_percent()
@@ -179,8 +184,8 @@ def read_sensors(hw):
             'temperature': temp_avg,
             'humidity': aht_data['humidity'],
             'pressure_station': bmp_data['pressure'],
-            'pressure_sea_level': pressure_mslp,  # Added for forecast compatibility
-            'pressure_mslp': pressure_mslp,
+            'pressure_sea_level': pressure_mslp,  # For forecast module compatibility
+            'pressure_mslp': pressure_mslp,  # For display and history tracking
             'pressure_trend_3h': pressure_trend_3h,
             'temperature_water': water_temp,  # Renamed from temperature_external
             'battery': battery_percent,
@@ -188,8 +193,8 @@ def read_sensors(hw):
             'hour': hour_of_day,
             'day_of_year': day_of_year,
             'external_temp': water_temp,  # Alias for compatibility
-            'illuminance': 5000.0,  # Default value (would need light sensor)
-            'wind_speed': 2.0  # Default value (would need wind sensor)
+            'illuminance': DEFAULT_ILLUMINANCE_LUX,
+            'wind_speed': DEFAULT_WIND_SPEED_MS
         }
     except Exception as e:
         log(f"Error reading sensors: {e}", "ERROR")
@@ -225,11 +230,11 @@ def generate_forecasts(sensor_data):
         # Simple weather interpretation based on pressure trend
         pressure_trend = sensor_data.get('pressure_trend_3h', 0.0)
         if pressure_trend < -1.5:
-            weather_forecast = "Погода погіршується"
+            weather_forecast = "Погода погіршується"  # Weather worsening
         elif pressure_trend > 1.5:
-            weather_forecast = "Погода покращується"
+            weather_forecast = "Погода покращується"  # Weather improving
         else:
-            weather_forecast = "Погода стабільна"
+            weather_forecast = "Погода стабільна"  # Weather stable
         
         return {
             'weather': weather_forecast,
@@ -272,6 +277,13 @@ def save_weather_log(data, filename='weather_log.json'):
         log(f"Saved weather log: {len(logs)} entries")
     except Exception as e:
         log(f"Error saving weather log: {e}", "WARNING")
+
+
+def format_fish_activity(forecasts):
+    """Format fish activity for display."""
+    if forecasts and forecasts.get('fish'):
+        return f"KIAR: {forecasts['fish']['KIAR_percent']:.0f}%"
+    return "Unknown"
 
 
 def mode_cold_boot(hw):
@@ -322,7 +334,7 @@ def mode_cold_boot(hw):
             display_data = {
                 **data,
                 'forecast': forecasts['weather'] if forecasts else 'Initialized',
-                'fish_activity': f"KIAR: {forecasts['fish']['KIAR_percent']:.0f}%" if forecasts and forecasts.get('fish') else 'Unknown'
+                'fish_activity': format_fish_activity(forecasts)
             }
             
             hw['display'].show_data(display_data, hw.get('pressure_history'))
@@ -377,7 +389,7 @@ def mode_timer_wake(hw):
             display_data = {
                 **data,
                 'forecast': forecasts['weather'] if forecasts else 'Updated',
-                'fish_activity': f"KIAR: {forecasts['fish']['KIAR_percent']:.0f}%" if forecasts and forecasts.get('fish') else 'Good'
+                'fish_activity': format_fish_activity(forecasts)
             }
             hw['display'].show_data(display_data, hw.get('pressure_history'))
             time.sleep(5)
