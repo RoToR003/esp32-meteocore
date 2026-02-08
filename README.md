@@ -27,11 +27,15 @@ A modular, scientifically accurate system for weather forecasting and fish bite 
 - Scientific basis using Van't Hoff equation for cold-blooded animals
 
 ### ESP32 Hardware Support
-- **BME280/BMP180** sensor drivers (temperature, humidity, pressure)
+- **BME280/BMP180/BMP280** sensor drivers (temperature, humidity, pressure)
+- **AHT20** sensor driver (temperature, humidity) for ESP32-S3
 - **BH1750** light sensor support
-- **WiFi** connection management with auto-reconnect
+- **ST7789** TFT display driver (1.28"/1.69" with PWM backlight)
+- **WiFi** connection management with auto-reconnect and burst mode
+- **Deep Sleep** power management with wake-on-timer and wake-on-IR
+- **Battery monitoring** via ADC with voltage divider
 - **MQTT** integration for IoT platforms
-- **Display** drivers (SSD1306 OLED, LCD1602)
+- **Display** drivers (SSD1306 OLED, LCD1602, ST7789 TFT)
 - Mock sensors for testing without hardware
 
 ## 📁 Project Structure
@@ -41,9 +45,11 @@ esp32-meteocore/
 ├── README.md                   # This file
 ├── requirements.txt            # CPython dependencies
 ├── requirements-esp32.txt      # MicroPython dependencies
+├── main.py                     # ⭐ ESP32-S3 autonomous station entry point
+├── boot.py                     # ⭐ Boot configuration
 ├── src/
 │   ├── core/                   # Core utilities
-│   │   ├── constants.py        # Physical constants
+│   │   ├── constants.py        # Physical constants (⭐ ESP32-S3 config added)
 │   │   ├── calculations.py     # Math functions (numpy-free)
 │   │   └── validators.py       # Input validation
 │   ├── meteo/                  # Weather forecasting
@@ -54,9 +60,15 @@ esp32-meteocore/
 │   ├── fishing/                # Fish activity prediction
 │   │   ├── activity.py         # KIAR calculation
 │   │   ├── profiles.py         # Fish species profiles
-│   │   └── chemistry.py        # Water chemistry
+│   │   ├── chemistry.py        # Water chemistry
+│   │   └── pressure_analyzer.py # ⭐ Simplified pressure trend analysis
 │   ├── esp32/                  # ESP32 hardware drivers
 │   │   ├── sensors.py          # BME280, BH1750 drivers
+│   │   ├── aht20.py            # ⭐ AHT20 temperature/humidity driver
+│   │   ├── bmp280.py           # ⭐ BMP280 pressure sensor driver
+│   │   ├── st7789_display.py   # ⭐ ST7789 TFT display driver
+│   │   ├── power_manager.py    # ⭐ Deep Sleep and battery management
+│   │   ├── memory_optimizer.py # ⭐ RAM optimization utilities
 │   │   ├── wifi_manager.py     # WiFi management
 │   │   ├── mqtt_client.py      # MQTT client
 │   │   └── display.py          # Display drivers
@@ -66,7 +78,8 @@ esp32-meteocore/
 │   ├── demo_meteo.py           # Weather forecast demo
 │   ├── demo_fishing.py         # Fish prediction demo
 │   ├── esp32_standalone.py     # Standalone ESP32 operation
-│   └── esp32_mqtt.py           # ESP32 with MQTT
+│   ├── esp32_mqtt.py           # ESP32 with MQTT
+│   └── esp32s3_station_demo.py # ⭐ ESP32-S3 autonomous station demo
 ├── tests/
 │   ├── test_calculations.py    # Unit tests
 │   └── ...
@@ -119,6 +132,229 @@ python examples/demo_fishing.py
    ```python
    import esp32_standalone
    ```
+
+## 🔋 ESP32-S3 Autonomous Station Mode
+
+### Overview
+Transform your ESP32-S3 into an **autonomous meteo station** with ultra-low power consumption for 6-month battery operation!
+
+### Features
+- ✅ **Deep Sleep Mode**: Wakes once per hour for updates (~30 µA consumption)
+- ✅ **IR Remote Wake**: View data instantly without WiFi
+- ✅ **ST7789 Display**: 1.28" or 1.69" IPS TFT with PWM brightness
+- ✅ **Battery Powered**: 2×18650 cells (~5400 mAh capacity)
+- ✅ **WiFi Burst Mode**: Connect only for 10-15 seconds to save power
+- ✅ **Memory Optimized**: No numpy/pandas, minimal RAM usage
+- ✅ **Smart Sensors**: AHT20 (temp/humidity) + BMP280 (pressure)
+
+### Hardware Requirements
+
+**MCU:** YD-ESP32-S3 (N16R8)
+- 16MB Flash, 8MB PSRAM
+- MicroPython firmware
+- Deep Sleep with RTC GPIO support
+
+**Display:** ST7789 (1.28" or 1.69" IPS TFT)
+```python
+# SPI Interface
+SCK  = GPIO 14
+MOSI = GPIO 13
+RST  = GPIO 12
+DC   = GPIO 11
+BLK  = GPIO 10  # PWM for brightness
+```
+
+**Sensors (I2C):**
+```python
+# AHT20 (Temperature/Humidity)
+# BMP280 (Pressure/Temperature)
+SDA = GPIO 4
+SCL = GPIO 5
+```
+
+**IR Receiver:** VS1838B
+```python
+IR_PIN = GPIO 1  # RTC GPIO for wake_on_ext0
+```
+
+**Battery Monitoring:**
+```python
+BAT_ADC = GPIO 2  # Voltage divider 100kΩ/100kΩ
+```
+
+**Power Supply:**
+- 2×18650 cells in parallel (~5400 mAh)
+- TP4056 USB-C charging module
+- MT3608 Step-Up converter (4.5V → 5V)
+
+### Operating Modes
+
+#### 1. Cold Boot (First Start)
+```
+1. Initialize peripherals (I2C, SPI, Display)
+2. Connect WiFi (from saved networks)
+3. NTP time synchronization
+4. Fetch weather forecast from API
+5. Read sensors (AHT20 + BMP280)
+6. Save data to NVS (Non-Volatile Storage)
+7. Enter Deep Sleep (1 hour)
+```
+
+#### 2. Timer Wake (Every Hour)
+```
+1. Wake from Deep Sleep (timer)
+2. Turn on WiFi (10-15 seconds only!)
+3. Read sensors
+4. Update weather forecast
+5. Analyze pressure trend (last 6-12 hours)
+6. Update display (5 seconds)
+7. Turn off WiFi
+8. Enter Deep Sleep (1 hour)
+```
+
+#### 3. IR Wake (Remote Button Press)
+```
+1. Wake from Deep Sleep (IR signal)
+2. NO WiFi activation (saves power)
+3. Read sensors (local data only)
+4. Display last cached forecast
+5. Keep backlight on (15 seconds)
+6. Enter Deep Sleep (1 hour)
+```
+
+### Power Consumption
+
+**Deep Sleep Mode:**
+- ESP32-S3: ~10-20 µA
+- AHT20: 0.25 µA (standby)
+- BMP280: 0.1 µA (sleep)
+- Display: 0 mA (backlight off)
+- **Total: ~20-30 µA**
+
+**Active Mode (Timer Wake):**
+- ESP32-S3 + WiFi: ~200 mA (10 sec)
+- Sensor reading: ~5 mA (1 sec)
+- Display: ~30 mA (5 sec)
+- **Average: ~1.2 mAh per hour**
+
+**Battery Life:**
+- Capacity: 5400 mAh (2×18650)
+- Consumption: 1.2 mA/hour (average)
+- **Runtime: ~4500 hours (6 months!)** 🔋
+
+### Installation
+
+1. **Flash MicroPython to ESP32-S3**
+   ```bash
+   esptool.py --chip esp32s3 --port /dev/ttyUSB0 erase_flash
+   esptool.py --chip esp32s3 --port /dev/ttyUSB0 write_flash -z 0 ESP32_GENERIC_S3-20240602-v1.23.0.bin
+   ```
+
+2. **Install required MicroPython libraries**
+   ```bash
+   # Connect to ESP32-S3
+   mpremote connect /dev/ttyUSB0
+   
+   # Install ST7789 display driver
+   mpremote mip install github:russhughes/st7789py_mpy
+   
+   # Install sensor libraries
+   mpremote mip install ahtx0
+   mpremote mip install bmp280
+   ```
+
+3. **Upload the project**
+   ```bash
+   # Upload all source files
+   mpremote cp -r src/ :
+   mpremote cp main.py :
+   mpremote cp boot.py :
+   ```
+
+4. **Configure WiFi**
+   Edit WiFi credentials before uploading or use the interactive setup.
+
+5. **Run**
+   ```bash
+   # The station will auto-start from main.py
+   # Or run manually:
+   mpremote run main.py
+   ```
+
+### Usage Example
+
+```python
+# Run the autonomous station demo
+python examples/esp32s3_station_demo.py
+```
+
+The demo demonstrates:
+- Sensor initialization and reading
+- Display functionality
+- Power management
+- Memory optimization
+- Fishing forecast analysis
+
+### Wiring Diagram
+
+```
+ESP32-S3          Connections
+--------          -----------
+GPIO 14   ---->   ST7789 SCK
+GPIO 13   ---->   ST7789 MOSI
+GPIO 12   ---->   ST7789 RST
+GPIO 11   ---->   ST7789 DC
+GPIO 10   ---->   ST7789 BLK
+GPIO 4    ---->   I2C SDA (AHT20, BMP280)
+GPIO 5    ---->   I2C SCL (AHT20, BMP280)
+GPIO 1    ---->   VS1838B IR Receiver
+GPIO 2    ---->   Battery ADC (via divider)
+```
+
+### Configuration
+
+All ESP32-S3 settings are in `src/core/constants.py`:
+
+```python
+# Deep Sleep settings
+SLEEP_DURATION_NORMAL = 3600  # 1 hour (seconds)
+SLEEP_DURATION_SHORT = 300    # 5 min (for testing)
+SLEEP_DURATION_IR_DISPLAY = 15  # 15 sec (after IR wake)
+
+# Display settings
+DISPLAY_WIDTH = 240
+DISPLAY_HEIGHT = 240  # or 280 for 1.69"
+DISPLAY_ROTATION = 0  # 0, 90, 180, 270
+
+# Battery thresholds
+BAT_FULL = 4.2   # Volts (100%)
+BAT_EMPTY = 3.2  # Volts (0%)
+```
+
+### Fishing Forecast
+
+The autonomous station includes a simplified pressure analyzer for fishing predictions:
+
+```python
+from src.fishing.pressure_analyzer import analyze_pressure_trend
+
+# Pressure history (hourly readings)
+pressures = [1013.2, 1012.8, 1012.5, 1012.0, 1011.5, 1011.0]
+
+result = analyze_pressure_trend(pressures)
+# Result:
+# {
+#     'delta_6h': -2.2,
+#     'trend': 'falling',
+#     'fishing_status': '🎣 ВІДМІННО (хижак)',
+#     'recommendation': 'Тиск падає - жор хижаків!'
+# }
+```
+
+**Pressure Logic:**
+- ΔP < -2 hPa/6h: Falling → Excellent for predators
+- ΔP > +2 hPa/6h: Rising → Reduced activity
+- |ΔP| < 2 hPa/6h: Stable → Normal activity
 
 ## 📊 Usage Examples
 
