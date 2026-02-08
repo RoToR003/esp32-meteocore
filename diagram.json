@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "author": "Meteo Station Dev",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "board-esp32-s3-devkitc-1", "id": "esp", "top": 0, "left": 0, "attrs": {} },
+    { "type": "board-bmp280", "id": "bmp", "top": -60, "left": 150, "attrs": { "address": "0x76" } },
+    { "type": "board-ili9341-spi", "id": "lcd", "top": 50, "left": 150, "attrs": {} }
+  ],
+  "connections": [
+    [ "esp:TX", "$serialMonitor:RX", "", [] ],
+    [ "esp:RX", "$serialMonitor:TX", "", [] ],
+    [ "esp:GND", "bmp:GND", "black", [ "v0" ] ],
+    [ "esp:3V3", "bmp:VCC", "red", [ "v0" ] ],
+    [ "esp:4", "bmp:SDA", "green", [ "v0" ] ],
+    [ "esp:5", "bmp:SCL", "blue", [ "v0" ] ],
+    [ "esp:GND", "lcd:GND", "black", [ "v0" ] ],
+    [ "esp:3V3", "lcd:VCC", "red", [ "v0" ] ],
+    [ "esp:10", "lcd:CS", "yellow", [ "v0" ] ],
+    [ "esp:12", "lcd:RESET", "orange", [ "v0" ] ],
+    [ "esp:11", "lcd:DC", "white", [ "v0" ] ],
+    [ "esp:13", "lcd:MOSI", "blue", [ "v0" ] ],
+    [ "esp:14", "lcd:SCK", "purple", [ "v0" ] ],
+    [ "esp:3V3", "lcd:LED", "red", [ "v0" ] ]
+  ]
+}
