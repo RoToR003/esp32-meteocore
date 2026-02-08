@@ -31,13 +31,13 @@ class MeteoDisplay:
     High-level display manager for meteo station.
     """
     
-    def __init__(self, width=240, height=240):
+    def __init__(self, width=240, height=320):
         """
         Initialize ST7789 display.
         
         Args:
-            width: Display width (240 for 1.28", 240 for 1.69")
-            height: Display height (240 for 1.28", 280 for 1.69")
+            width: Display width (240 for 2.0" display)
+            height: Display height (320 for 2.0" display)
         """
         try:
             from machine import Pin, SPI, PWM
@@ -116,6 +116,10 @@ class MeteoDisplay:
         """Turn off display (sleep + backlight off)."""
         try:
             self.set_brightness(0)
+            if self.display:
+                # Put display in sleep mode (optional, saves power)
+                # self.display.sleep_mode(True)  # Uncomment if supported
+                pass
             log("Display off")
         except Exception as e:
             log(f"Error turning off display: {e}", "ERROR")
@@ -123,6 +127,10 @@ class MeteoDisplay:
     def display_on(self):
         """Wake up display."""
         try:
+            if self.display:
+                # Wake display from sleep mode
+                # self.display.sleep_mode(False)  # Uncomment if supported
+                pass
             self.set_brightness(100)
             log("Display on")
         except Exception as e:
@@ -137,7 +145,9 @@ class MeteoDisplay:
                 - temperature: float
                 - humidity: float
                 - pressure: float (hPa)
+                - temperature_water: float (optional)
                 - forecast: str
+                - fish_activity: str (optional)
                 - battery: float (%)
         """
         try:
@@ -148,61 +158,71 @@ class MeteoDisplay:
             # Clear
             self.clear()
             
-            # Battery
-            battery = data.get('battery', 0)
-            self.display.text(
-                f"BAT: {battery:.0f}%",
-                10, 10,
-                self.st7789.WHITE
-            )
+            y_offset = 10
+            line_height = 30
             
             # Temperature
-            temp = data.get('temperature', 0)
-            self.display.text(
-                f"T: {temp:.1f}C",
-                10, 60,
-                self.st7789.YELLOW
-            )
-            
-            # External Temperature (DS18B20)
-            y_offset = 90
-            if data.get('temperature_external') is not None:
-                ext_temp = data['temperature_external']
-                self.display.text(
-                    f"Out: {ext_temp:.1f}C",
-                    10, y_offset,
-                    self.st7789.YELLOW
-                )
-                y_offset += 30
+            if 'temperature' in data:
+                temp = data['temperature']
+                text = f"Temp: {temp:.1f}C"
+                self.display.text(text, 10, y_offset, self.st7789.YELLOW)
+                y_offset += line_height
             
             # Humidity
-            humidity = data.get('humidity', 0)
-            self.display.text(
-                f"H: {humidity:.0f}%",
-                10, y_offset,
-                self.st7789.CYAN
-            )
-            y_offset += 30
+            if 'humidity' in data:
+                humidity = data['humidity']
+                text = f"Humidity: {humidity:.1f}%"
+                self.display.text(text, 10, y_offset, self.st7789.CYAN)
+                y_offset += line_height
             
             # Pressure
-            pressure = data.get('pressure', 0)
-            self.display.text(
-                f"P: {pressure:.1f}hPa",
-                10, y_offset,
-                self.st7789.GREEN
-            )
+            if 'pressure_mslp' in data:
+                pressure = data['pressure_mslp']
+                text = f"Press: {pressure:.1f} hPa"
+                self.display.text(text, 10, y_offset, self.st7789.GREEN)
+                y_offset += line_height
+            elif 'pressure' in data:
+                pressure = data['pressure']
+                text = f"Press: {pressure:.1f} hPa"
+                self.display.text(text, 10, y_offset, self.st7789.GREEN)
+                y_offset += line_height
+            
+            # Water temperature (DS18B20)
+            if data.get('temperature_water') is not None:
+                water_temp = data['temperature_water']
+                text = f"Water: {water_temp:.1f}C"
+                self.display.text(text, 10, y_offset, self.st7789.CYAN)
+                y_offset += line_height
+            elif data.get('temperature_external') is not None:
+                # Backward compatibility
+                ext_temp = data['temperature_external']
+                text = f"Water: {ext_temp:.1f}C"
+                self.display.text(text, 10, y_offset, self.st7789.CYAN)
+                y_offset += line_height
+            
+            # Battery
+            if 'battery' in data:
+                battery = data['battery']
+                color = self.st7789.GREEN if battery > 20 else self.st7789.RED
+                text = f"Battery: {battery:.0f}%"
+                self.display.text(text, 10, y_offset, color)
+                y_offset += line_height
             
             # Forecast
-            forecast = data.get('forecast', 'N/A')
-            # Truncate if too long
-            if len(forecast) > 20:
-                forecast = forecast[:20]
-            y_offset += 50
-            self.display.text(
-                forecast,
-                10, y_offset,
-                self.st7789.WHITE
-            )
+            if 'forecast' in data:
+                forecast = data['forecast']
+                # Truncate if too long
+                if len(forecast) > 20:
+                    forecast = forecast[:20]
+                text = f"Forecast: {forecast}"
+                self.display.text(text, 10, y_offset, self.st7789.YELLOW)
+                y_offset += line_height
+            
+            # Fish activity
+            if 'fish_activity' in data:
+                fish = data['fish_activity']
+                text = f"Fish: {fish}"
+                self.display.text(text, 10, y_offset, self.st7789.MAGENTA)
             
             log("Meteo data displayed")
         

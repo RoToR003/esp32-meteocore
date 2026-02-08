@@ -155,14 +155,20 @@ class PhysicalConstants:
     # ========================================================================
 
     # Display ST7789 (SPI)
-    DISPLAY_WIDTH = const(240)   # 1.28" or 1.69"
-    DISPLAY_HEIGHT = const(240)  # or 280 for 1.69"
+    DISPLAY_WIDTH = const(240)   # Pixels (2.0" display)
+    DISPLAY_HEIGHT = const(320)  # Pixels (2.0" display, 240×320)
     DISPLAY_SCK = const(14)
     DISPLAY_MOSI = const(13)
     DISPLAY_RST = const(12)
     DISPLAY_DC = const(11)
     DISPLAY_BLK = const(10)  # PWM for brightness
+    DISPLAY_CS = const(9)    # Chip Select (optional, not used)
     DISPLAY_ROTATION = 0  # 0, 90, 180, 270
+    
+    # Display zones (240×320 layout)
+    HEADER_HEIGHT = 40    # Top status bar
+    BODY_HEIGHT = 240     # Main data area
+    FOOTER_HEIGHT = 40    # Bottom forecast
 
     # Sensors I2C
     SENSOR_SDA = const(4)
@@ -182,20 +188,28 @@ class PhysicalConstants:
     # IR Receiver HX1838 (or compatible VS1838B)
     IR_PIN = const(1)  # RTC GPIO for wake_on_ext0
 
-    # Battery ADC
+    # Battery ADC (2×18650 Li-Ion cells in series)
     BAT_ADC_PIN = const(2)
-    BAT_VOLTAGE_DIVIDER = 2.0  # 100k/100k = 1:1
-    BAT_FULL = 4.2  # Volts (100%)
-    BAT_EMPTY = 3.2  # Volts (0%)
+    BAT_VOLTAGE_DIVIDER = 2.0  # 100kΩ/100kΩ voltage divider
+    BAT_VOLTAGE_MAX = 8.4      # Fully charged (2×4.2V)
+    BAT_VOLTAGE_MIN = 6.0      # Empty (2×3.0V, cutoff)
+    BAT_VOLTAGE_NOMINAL = 7.4  # Nominal (2×3.7V)
+    BAT_FULL = 8.4             # Alias for backward compatibility
+    BAT_EMPTY = 6.0            # Alias for backward compatibility
+    
+    # Battery thresholds
+    BATTERY_LOW_PERCENT = 20    # Show low battery warning
+    BATTERY_CRITICAL_PERCENT = 10 # Enter power saving mode
 
     # ========================================================================
     # DEEP SLEEP CONFIGURATION
     # ========================================================================
 
     # Wake intervals
-    SLEEP_DURATION_NORMAL = const(3600)  # 1 hour (seconds)
+    SLEEP_DURATION_NORMAL = const(3600)  # 1 hour (hourly updates)
     SLEEP_DURATION_SHORT = const(300)    # 5 min (for testing)
     SLEEP_DURATION_IR_DISPLAY = const(15)  # 15 sec (after IR wake)
+    SLEEP_DURATION_LOW_BATTERY = const(7200) # 2 hours (conserve power)
 
     # Wake reasons (for detection)
     WAKE_REASON_COLD_BOOT = 0
@@ -203,8 +217,10 @@ class PhysicalConstants:
     WAKE_REASON_IR_REMOTE = 2
 
     # WiFi settings
-    WIFI_TIMEOUT = const(10)  # seconds
-    WIFI_BURST_MODE = True  # Turn off after API call
+    WIFI_SSID = "YOUR_WIFI_SSID"        # Replace with your WiFi name
+    WIFI_PASSWORD = "YOUR_WIFI_PASSWORD" # Replace with your WiFi password
+    WIFI_TIMEOUT = const(15)             # Connection timeout (seconds)
+    WIFI_BURST_MODE = True               # Turn off after API call
 
     # NTP settings for Vinnytsia
     NTP_SERVER = "ua.pool.ntp.org"
@@ -222,6 +238,80 @@ class PhysicalConstants:
     # Battery capacity
     BATTERY_CAPACITY = 5400  # mAh (2x 2700 in parallel)
     ESTIMATED_RUNTIME_DAYS = 180  # ~6 months
+    
+    # ========================================================================
+    # BAROMETRIC CONSTANTS
+    # ========================================================================
+    
+    # Standard atmosphere
+    PRESSURE_SEA_LEVEL = 1013.25    # hPa (standard sea level pressure)
+    TEMPERATURE_STANDARD = 15.0     # °C (ISA standard temperature)
+    LAPSE_RATE = 0.0065             # K/m (temperature lapse rate)
+    
+    # Gas constants (refined values)
+    GAS_CONSTANT_DRY_AIR = 287.05   # J/(kg·K)
+    GAS_CONSTANT_WATER_VAPOR = 461.5 # J/(kg·K)
+    SPECIFIC_HEAT_AIR = 1005.0      # J/(kg·K)
+    
+    # Gravity
+    GRAVITY = 9.80665               # m/s² (standard gravity)
+    
+    # Molar masses
+    MOLAR_MASS_DRY_AIR = 0.0289644  # kg/mol
+    MOLAR_MASS_WATER = 0.018016     # kg/mol
+    
+    # ========================================================================
+    # FISHING FORECAST CONSTANTS
+    # ========================================================================
+    
+    # Pressure change thresholds (hPa per hour)
+    PRESSURE_CHANGE_STABLE = 0.5    # Stable weather
+    PRESSURE_CHANGE_RISING = 1.5    # Rising pressure (good fishing)
+    PRESSURE_CHANGE_FALLING = -1.5  # Falling pressure (bad fishing)
+    
+    # Optimal fishing conditions
+    OPTIMAL_TEMP_MIN = 15.0         # °C
+    OPTIMAL_TEMP_MAX = 25.0         # °C
+    OPTIMAL_PRESSURE_MIN = 1005.0   # hPa
+    OPTIMAL_PRESSURE_MAX = 1020.0   # hPa
+    OPTIMAL_WIND_MAX = 5.0          # m/s
+    
+    # Water temperature thresholds (South Bug River, Vinnytsia)
+    WATER_TEMP_WINTER = 1.0     # °C (January average)
+    WATER_TEMP_SUMMER = 24.0    # °C (July peak)
+    WATER_TEMP_FREEZE = 0.0     # °C (ice formation)
+    
+    # ========================================================================
+    # DATA LOGGING
+    # ========================================================================
+    
+    LOG_INTERVAL = const(3600)      # Log data every hour
+    MAX_LOG_ENTRIES = const(168)    # 7 days of hourly data
+    
+    # NVS (Non-Volatile Storage) keys
+    NVS_NAMESPACE = "meteocore"
+    NVS_KEY_PRESSURE_HISTORY = "press_hist"
+    NVS_KEY_BATTERY_CALIBRATION = "bat_cal"
+    NVS_KEY_BOOT_COUNT = "boot_count"
+    
+    # ========================================================================
+    # DEBUG CONFIGURATION
+    # ========================================================================
+    
+    DEBUG_MODE = True               # Enable debug logging
+    DEBUG_UART_BAUD = 115200        # Serial console baud rate
+    
+    # Sensor read retries
+    SENSOR_READ_RETRIES = 3         # Number of retries for failed reads
+    SENSOR_READ_DELAY = 100         # ms between retries
+    
+    # IR remote commands (customize for your remote!)
+    IR_PROTOCOL = "NEC"             # Most common IR protocol
+    IR_CMD_WAKE = 0x45              # Power button
+    IR_CMD_NEXT = 0x46              # Next screen
+    IR_CMD_PREV = 0x47              # Previous screen
+    IR_CMD_BRIGHTNESS_UP = 0x48     # Increase brightness
+    IR_CMD_BRIGHTNESS_DOWN = 0x49   # Decrease brightness
 
 
 # For backward compatibility

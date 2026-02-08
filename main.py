@@ -105,13 +105,13 @@ def read_sensors(hw):
         # Average temperature from both sensors
         temp_avg = (aht_data['temperature'] + bmp_data['temperature']) / 2
         
-        # External temperature (DS18B20)
-        ext_temp = None
+        # Water temperature (DS18B20) - for fishing forecast!
+        water_temp = None
         if hw.get('ds18b20'):
             try:
                 ext_data = hw['ds18b20'].read()
-                ext_temp = ext_data.get('temperature_external')
-                log(f"DS18B20: {ext_temp}°C")
+                water_temp = ext_data.get('temperature_external')
+                log(f"DS18B20 Water: {water_temp}°C")
             except Exception as e:
                 log(f"DS18B20 read error: {e}", "WARNING")
         
@@ -131,7 +131,7 @@ def read_sensors(hw):
             'humidity': aht_data['humidity'],
             'pressure_station': bmp_data['pressure'],
             'pressure_mslp': pressure_mslp,
-            'temperature_external': ext_temp,
+            'temperature_water': water_temp,  # Renamed from temperature_external
             'battery': battery_percent,
             'timestamp': time.time()
         }
