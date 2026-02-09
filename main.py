@@ -79,10 +79,10 @@ def init_hardware():
         
         # Sensors - with DHT22 fallback for Wokwi
         if env['platform'] == 'wokwi':
-            # Wokwi: Use DHT22 on SDA GPIO pin (reusing I2C pin as digital GPIO)
+            # Wokwi: Use DHT22 on dedicated GPIO (separate from I2C bus)
             # Note: DHT22 uses single-wire protocol, not I2C
-            log("Wokwi mode: Using DHT22 for AHT20 simulation")
-            aht20_pin = Pin(PC.SENSOR_SDA)  # SDA pin repurposed as GPIO for DHT22
+            log("Wokwi mode: Using DHT22 for AHT20 simulation on GPIO 6")
+            aht20_pin = Pin(PC.DHT22_SIM_PIN)  # GPIO 6 (dedicated pin, no I2C conflict)
             aht20 = AHT20(i2c=i2c, pin=aht20_pin)
         else:
             # Real hardware: Use AHT20
