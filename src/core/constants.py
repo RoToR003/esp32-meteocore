@@ -175,6 +175,9 @@ class PhysicalConstants:
     SENSOR_SCL = const(5)
     SENSOR_FREQ = const(100000)  # 100 kHz
 
+    # DHT22 simulation for Wokwi (separate GPIO to avoid I2C conflict)
+    DHT22_SIM_PIN = const(6)  # GPIO 6 for DHT22 in Wokwi mode
+
     # AHT20 (replacing BME280 for humidity!)
     AHT20_ADDRESS = const(0x38)
 

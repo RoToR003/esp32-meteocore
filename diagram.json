@@ -78,8 +78,7 @@
     
     ["esp:GND.3", "aht20_sim:GND", "black", ["h0"]],
     ["esp:3V3", "aht20_sim:VCC", "red", ["h0"]],
-    ["esp:4", "aht20_sim:SDA", "green", ["h0"]],
-    ["esp:5", "aht20_sim:SCL", "blue", ["h0"]],
+    ["esp:6", "aht20_sim:SDA", "green", ["h0"]],
     
     ["esp:GND.4", "ds18b20:GND", "black", ["h0"]],
     ["esp:3V3", "ds18b20:VCC", "red", ["h0"]],
